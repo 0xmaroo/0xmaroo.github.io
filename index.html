@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>0xMARO — Blueprint &amp; Breach</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=IBM+Plex+Sans+Condensed:wght@500;600&display=swap" rel="stylesheet">
+<style>
+/* ─────────────────────────────────────────────
+   TOKENS
+   ───────────────────────────────────────────── */
+:root{
+  --ink-900:#080A0F; --ink-800:#0D1017; --ink-700:#141924; --ink-600:#1D2534;
+  --line:#1A202C; --grid:#10141D;
+  --text-hi:#E8EBF0; --text:#B6BDCA; --text-lo:#6F7A8C; --text-dim:#4A5364;
+  --blue-400:#7FA6FF; --blue-500:#4E7CF6; --blue-900:#101A33;
+  --sulfur-300:#F2E3A0; --sulfur-400:#E3C567; --sulfur-500:#C9A73E; --sulfur-900:#211C08;
+  --stamp-crit:#C6453C; --stamp-high:#C2683A; --stamp-med:#A08A3C; --ok:#3F9D6B;
+
+  --f-mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  --f-sans:"IBM Plex Sans",system-ui,sans-serif;
+  --f-cond:"IBM Plex Sans Condensed","IBM Plex Sans",system-ui,sans-serif;
+  --f-ar:"IBM Plex Sans Arabic","IBM Plex Sans",system-ui,sans-serif;
+
+  --step--1:clamp(.78rem,.75rem + .12vw,.85rem);
+  --step-0:clamp(1rem,.96rem + .2vw,1.06rem);
+  --step-1:clamp(1.2rem,1.1rem + .5vw,1.45rem);
+  --step-2:clamp(1.5rem,1.3rem + 1vw,2.1rem);
+  --step-4:clamp(1.9rem,1.2rem + 3.4vw,3.9rem);
+
+  --rail:56px; --wrap:1180px;
+}
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0; background:var(--ink-900); color:var(--text);
+  font-family:var(--f-sans); font-size:var(--step-0); line-height:1.65;
+  -webkit-font-smoothing:antialiased;
+}
+/* blueprint grid, pure CSS */
+body::before{
+  content:""; position:fixed; inset:0; z-index:0; pointer-events:none;
+  background-image:
+    linear-gradient(var(--grid) 1px,transparent 1px),
+    linear-gradient(90deg,var(--grid) 1px,transparent 1px),
+    radial-gradient(ellipse 120% 70% at 50% -10%,rgba(78,124,246,.10),transparent 60%);
+  background-size:88px 88px,88px 88px,100% 100%;
+  mask-image:linear-gradient(180deg,#000 0%,#000 55%,transparent 100%);
+}
+/* ARABIC RULES */
+[lang="ar"] body,html[lang="ar"] body{font-family:var(--f-ar); line-height:1.85}
+html[lang="ar"] .u-label,html[lang="ar"] .stamp,html[lang="ar"] h1,html[lang="ar"] h2,html[lang="ar"] .case__title,html[lang="ar"] .diff__text{
+  text-transform:none !important; letter-spacing:0 !important; font-family:var(--f-ar)
+}
+html[lang="ar"] .mono-keep{font-family:var(--f-mono)}
+code,pre,.ltr{direction:ltr; unicode-bidi:isolate}
+
+a{color:inherit}
+:focus-visible{outline:2px solid var(--sulfur-400); outline-offset:3px; border-radius:2px}
+.skip{position:absolute; inset-inline-start:-999px; top:0; background:var(--sulfur-400); color:#000; padding:.6rem 1rem; z-index:99}
+.skip:focus{inset-inline-start:0}
+
+.wrap{max-width:var(--wrap); margin-inline:auto; padding-inline:clamp(1.1rem,4vw,2.5rem); position:relative; z-index:1}
+.u-label{font-family:var(--f-cond); text-transform:uppercase; letter-spacing:.09em; font-size:var(--step--1); color:var(--text-lo); font-weight:600}
+.u-blue{color:var(--blue-400)} .u-sulfur{color:var(--sulfur-400)}
+
+/* ── RAIL (ruler progress) ── */
+.rail{position:fixed; inset-block:0; inset-inline-start:0; width:var(--rail); z-index:5;
+  display:none; border-inline-end:1px solid var(--line); background:rgba(8,10,15,.6); backdrop-filter:blur(6px)}
+@media(min-width:1080px){.rail{display:block}}
+.rail__ticks{position:absolute; inset-block:0; inset-inline-end:0; width:14px;
+  background-image:linear-gradient(var(--line) 1px,transparent 1px); background-size:100% 16px}
+.rail__ind{position:absolute; inset-inline-end:0; width:26px; height:2px; background:var(--sulfur-400); transition:top .1s linear}
+.rail__ind::after{content:attr(data-pct); position:absolute; inset-inline-end:32px; top:-.65em;
+  font-family:var(--f-mono); font-size:11px; color:var(--sulfur-400)}
+.rail__mark{position:absolute; inset-inline-start:10px; font-family:var(--f-mono); font-size:11px; color:var(--text-dim); writing-mode:vertical-rl}
+html[dir="rtl"] .rail__mark{writing-mode:vertical-rl; transform:rotate(180deg)}
+
+/* ── HEADER ── */
+header{position:sticky; top:0; z-index:10; background:rgba(8,10,15,.82); backdrop-filter:blur(10px); border-block-end:1px solid var(--line)}
+.nav{display:flex; align-items:center; gap:1.5rem; padding-block:.9rem}
+.brand{font-family:var(--f-mono); font-weight:700; letter-spacing:-.02em; color:var(--text-hi); text-decoration:none; font-size:1.05rem}
+.brand span{color:var(--sulfur-400)}
+.nav__links{display:none; gap:1.4rem; margin-inline-start:auto}
+@media(min-width:760px){.nav__links{display:flex}}
+.nav__links a{font-family:var(--f-cond); text-transform:uppercase; letter-spacing:.08em; font-size:.8rem; color:var(--text-lo); text-decoration:none; padding-block:.4rem; border-block-end:1px solid transparent; transition:color .16s,border-color .16s}
+.nav__links a:hover{color:var(--text-hi); border-block-end-color:var(--sulfur-400)}
+html[lang="ar"] .nav__links a{font-family:var(--f-ar); text-transform:none; letter-spacing:0}
+.lang{margin-inline-start:auto; display:flex; border:1px solid var(--ink-600); border-radius:2px; overflow:hidden}
+@media(min-width:760px){.lang{margin-inline-start:0}}
+.lang button{background:transparent; border:0; color:var(--text-lo); font-family:var(--f-mono); font-size:.75rem; padding:.35rem .6rem; cursor:pointer; min-height:34px}
+.lang button[aria-pressed="true"]{background:var(--sulfur-400); color:#0A0B0D; font-weight:600}
+
+/* ── HERO ── */
+.hero{padding-block:clamp(3.5rem,10vw,7rem) clamp(2.5rem,6vw,4.5rem)}
+.hero__file{font-family:var(--f-mono); font-size:var(--step--1); color:var(--text-dim); margin-block-end:1.4rem}
+.hero__file::before{content:"┌ "; color:var(--blue-500)}
+.diff{border-inline-start:2px solid var(--ink-600); padding-inline-start:clamp(.9rem,2.5vw,1.6rem)}
+.diff__row{display:flex; align-items:flex-start; gap:.75rem; position:relative; font-size:var(--step-4); line-height:1.16; font-weight:600; letter-spacing:-.025em; font-family:var(--f-mono)}
+.diff__row + .diff__row{margin-block-start:.35rem}
+.diff__sign{color:var(--blue-500); flex:none; opacity:.8}
+.diff--add .diff__sign{color:var(--sulfur-400); opacity:1}
+.diff__text{color:var(--text-dim); position:relative; display:inline-block}
+.diff--add .diff__text{color:var(--text-hi)}
+.diff--add .diff__text em{font-style:normal; color:var(--sulfur-400)}
+.strike{position:absolute; inset-block-start:52%; inset-inline-start:-2px; height:2px; width:0; background:var(--blue-500); opacity:.85}
+.hero__sub{margin-block-start:2rem; max-width:56ch; color:var(--text); font-size:var(--step-1); line-height:1.5}
+.hero__cta{display:flex; flex-wrap:wrap; gap:.75rem; margin-block-start:2rem}
+.btn{display:inline-flex; align-items:center; gap:.5rem; padding:.7rem 1.15rem; min-height:44px; text-decoration:none;
+  font-family:var(--f-cond); text-transform:uppercase; letter-spacing:.08em; font-size:.8rem; font-weight:600;
+  border:1px solid var(--ink-600); color:var(--text-hi); background:var(--ink-800); transition:border-color .16s,color .16s,transform .16s}
+html[lang="ar"] .btn{font-family:var(--f-ar); text-transform:none; letter-spacing:0}
+.btn:hover{border-color:var(--sulfur-400); color:var(--sulfur-300)}
+.btn--primary{background:var(--sulfur-400); color:#0A0B0D; border-color:var(--sulfur-400)}
+.btn--primary:hover{background:var(--sulfur-300); color:#0A0B0D}
+
+/* proof strip */
+.proof{display:grid; grid-template-columns:1fr; gap:1px; margin-block-start:3rem; background:var(--line); border:1px solid var(--line)}
+@media(min-width:640px){.proof{grid-template-columns:repeat(3,1fr)}}
+.proof__i{background:var(--ink-900); padding:1rem 1.1rem; text-decoration:none; display:block; transition:background .16s}
+.proof__i:hover{background:var(--ink-800)}
+.proof__n{font-family:var(--f-mono); font-size:1.3rem; color:var(--text-hi); font-weight:600; display:block}
+.proof__n b{color:var(--sulfur-400); font-weight:600}
+.proof__l{margin-block-start:.15rem}
+.proof__v{display:block; margin-block-start:.4rem; font-family:var(--f-mono); font-size:.68rem; color:var(--blue-400)}
+
+/* ── SECTIONS ── */
+section{padding-block:clamp(3rem,7vw,5rem); border-block-start:1px solid var(--line); position:relative; z-index:1}
+.sec__head{display:flex; align-items:baseline; gap:1rem; margin-block-end:2rem; flex-wrap:wrap}
+.sec__num{font-family:var(--f-mono); color:var(--blue-500); font-size:.85rem}
+.sec__title{font-family:var(--f-mono); font-size:var(--step-2); font-weight:600; letter-spacing:-.02em; color:var(--text-hi); margin:0}
+.sec__note{margin-inline-start:auto; max-width:34ch; font-size:var(--step--1); color:var(--text-lo)}
+
+/* ── CASE FILES ── */
+.cases{display:grid; gap:1px; background:var(--line); border:1px solid var(--line)}
+@media(min-width:820px){.cases{grid-template-columns:repeat(3,1fr)}}
+.case{background:var(--ink-900); padding:1.4rem 1.3rem 1.5rem; text-decoration:none; display:flex; flex-direction:column; gap:.85rem; transition:background .16s}
+.case:hover{background:var(--ink-800)}
+.case__top{display:flex; align-items:center; gap:.6rem}
+.case__id{font-family:var(--f-mono); font-size:.72rem; color:var(--blue-400); letter-spacing:.04em}
+.stamp{margin-inline-start:auto; font-family:var(--f-mono); font-size:.62rem; font-weight:600; text-transform:uppercase; letter-spacing:.1em;
+  padding:.2rem .45rem; border:1px solid currentColor; transform:rotate(-3deg); opacity:.9}
+.stamp--patched{color:var(--ok)} .stamp--lab{color:var(--blue-400)} .stamp--disclosed{color:var(--stamp-high)}
+.case__title{font-family:var(--f-mono); font-size:1.02rem; font-weight:600; color:var(--text-hi); line-height:1.4; letter-spacing:-.01em; transition:color .16s}
+.case:hover .case__title{color:var(--sulfur-300)}
+.case__meta{margin-block-start:auto; display:flex; flex-wrap:wrap; gap:.4rem .7rem; font-family:var(--f-mono); font-size:.68rem; color:var(--text-dim)}
+.case__meta .k{color:var(--blue-400)}
+.case__fix{color:var(--ok)}
+
+/* ── ARSENAL TABLE ── */
+.tbl{width:100%; border-collapse:collapse; font-size:var(--step--1)}
+.tbl th,.tbl td{text-align:start; padding:.85rem .9rem; border-block-end:1px solid var(--line); vertical-align:top}
+.tbl th{font-family:var(--f-cond); text-transform:uppercase; letter-spacing:.09em; color:var(--text-lo); font-weight:600; font-size:.72rem}
+html[lang="ar"] .tbl th{font-family:var(--f-ar); text-transform:none; letter-spacing:0}
+.tbl td:first-child{color:var(--text-hi); font-weight:500; white-space:nowrap}
+.tbl .tools{font-family:var(--f-mono); color:var(--sulfur-400); font-size:.8rem}
+.tbl tr:hover td{background:var(--ink-800)}
+
+/* ── TIMELINE ── */
+.tl{border-inline-start:1px solid var(--ink-600); margin-inline-start:.5rem}
+.tl__i{position:relative; padding-inline-start:1.6rem; padding-block-end:1.9rem}
+.tl__i::before{content:""; position:absolute; inset-inline-start:-4px; top:.55rem; width:7px; height:7px; background:var(--ink-900); border:1px solid var(--sulfur-400); border-radius:50%}
+.tl__y{font-family:var(--f-mono); font-size:.72rem; color:var(--blue-400)}
+.tl__t{color:var(--text-hi); font-weight:500; margin-block:.15rem}
+.tl__d{color:var(--text-lo); font-size:var(--step--1); max-width:60ch}
+
+/* ── FOOTER ── */
+footer{border-block-start:1px solid var(--line); padding-block:2.5rem 3.5rem; position:relative; z-index:1}
+.foot{display:flex; flex-wrap:wrap; gap:1rem 2rem; align-items:center; font-family:var(--f-mono); font-size:.72rem; color:var(--text-dim)}
+.foot a{color:var(--text-lo); text-decoration:none; border-block-end:1px solid transparent}
+.foot a:hover{color:var(--sulfur-400); border-block-end-color:var(--sulfur-400)}
+.foot__end{margin-inline-start:auto}
+
+/* ── MOTION ── */
+.reveal{opacity:0; transform:translateY(8px)}
+.reveal.in{opacity:1; transform:none; transition:opacity .32s ease,transform .32s ease}
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important; transition-duration:.01ms!important}
+  html{scroll-behavior:auto}
+  .reveal{opacity:1; transform:none}
+}
+</style>
+</head>
+<body>
+<a class="skip" href="#main" data-en="Skip to content" data-ar="تخطَّ إلى المحتوى">Skip to content</a>
+
+<div class="rail" aria-hidden="true">
+  <div class="rail__ticks"></div>
+  <div class="rail__mark" style="top:1.5rem">0xMARO</div>
+  <div class="rail__ind" id="railInd" data-pct="00"></div>
+</div>
+
+<header>
+  <div class="wrap nav">
+    <a class="brand" href="#">0x<span>MARO</span></a>
+    <nav class="nav__links" aria-label="Primary">
+      <a href="#cases" data-en="Writeups" data-ar="التحليلات">Writeups</a>
+      <a href="#arsenal" data-en="Arsenal" data-ar="الأدوات">Arsenal</a>
+      <a href="#journey" data-en="Journey" data-ar="المسار">Journey</a>
+      <a href="#" data-en="Projects" data-ar="المشاريع">Projects</a>
+    </nav>
+    <div class="lang" role="group" aria-label="Language">
+      <button type="button" data-lang="en" aria-pressed="true">EN</button>
+      <button type="button" data-lang="ar" aria-pressed="false">ع</button>
+    </div>
+  </div>
+</header>
+
+<main id="main">
+
+  <!-- HERO -->
+  <div class="wrap hero">
+    <p class="hero__file mono-keep">~/identity.txt</p>
+
+    <div class="diff" id="diff">
+      <div class="diff__row diff--del">
+        <span class="diff__sign" aria-hidden="true">-</span>
+        <span class="diff__text" data-en="I build systems that work." data-ar="بابني أنظمة شغّالة.">I build systems that work.<span class="strike" id="strike"></span></span>
+      </div>
+      <div class="diff__row diff--add" id="addRow">
+        <span class="diff__sign" aria-hidden="true">+</span>
+        <span class="diff__text" data-en="I <em>break</em> systems that work." data-ar="وبكسر أنظمة <em>شغّالة</em>.">I <em>break</em> systems that work.</span>
+      </div>
+    </div>
+
+    <p class="hero__sub" data-en="Application security, written by someone who ships the code. Every writeup ends with a fix — in the language the bug was written in."
+       data-ar="أمن تطبيقات مكتوب بقلم واحد بيكتب الكود نفسه. كل تحليل بينتهي بإصلاح حقيقي — بنفس اللغة اللي اتكتبت بيها الثغرة.">
+       Application security, written by someone who ships the code. Every writeup ends with a fix — in the language the bug was written in.</p>
+
+    <div class="hero__cta">
+      <a class="btn btn--primary" href="#cases" data-en="Read the case files" data-ar="اقرأ ملفات الحالات">Read the case files</a>
+      <a class="btn" href="#journey" data-en="The route I took" data-ar="الطريق اللي مشيته">The route I took</a>
+    </div>
+
+    <div class="proof">
+      <a class="proof__i" href="#" >
+        <span class="proof__n">#3 <b>EG</b></span>
+        <span class="u-label proof__l" data-en="TryHackMe · Cyber Security 101" data-ar="TryHackMe · مسار Cyber Security 101">TryHackMe · Cyber Security 101</span>
+        <span class="proof__v" data-en="verify ↗" data-ar="تحقّق ↗">verify ↗</span>
+      </a>
+      <a class="proof__i" href="#">
+        <span class="proof__n">6<b>th</b> / 200+</span>
+        <span class="u-label proof__l" data-en="CAT Reloaded CTF · team liel0x1" data-ar="مسابقة CAT Reloaded · فريق liel0x1">CAT Reloaded CTF · team liel0x1</span>
+        <span class="proof__v" data-en="verify ↗" data-ar="تحقّق ↗">verify ↗</span>
+      </a>
+      <a class="proof__i" href="#">
+        <span class="proof__n">3 <b>live</b></span>
+        <span class="u-label proof__l" data-en="Production systems I built &amp; maintain" data-ar="أنظمة production بنيتها وبشتغل عليها">Production systems I built &amp; maintain</span>
+        <span class="proof__v" data-en="see projects ↗" data-ar="شوف المشاريع ↗">see projects ↗</span>
+      </a>
+    </div>
+  </div>
+
+  <!-- CASE FILES -->
+  <section id="cases">
+    <div class="wrap">
+      <div class="sec__head reveal">
+        <span class="sec__num mono-keep">§01</span>
+        <h2 class="sec__title" data-en="Selected case files" data-ar="ملفات مختارة">Selected case files</h2>
+        <p class="sec__note" data-en="Own systems first. If I built it, I can show you the root cause and the patch."
+           data-ar="الأنظمة اللي بنيتها الأول. لو أنا بنيته، أقدر أوريك الجذر والإصلاح.">Own systems first. If I built it, I can show you the root cause and the patch.</p>
+      </div>
+
+      <div class="cases">
+        <a class="case reveal" href="#">
+          <div class="case__top">
+            <span class="case__id mono-keep">CASE 014 · WEB</span>
+            <span class="stamp stamp--patched mono-keep">patched</span>
+          </div>
+          <h3 class="case__title" data-en="The invoice endpoint that trusted a number"
+              data-ar="الـ endpoint اللي وثق في رقم جاي من المستخدم">The invoice endpoint that trusted a number</h3>
+          <div class="case__meta mono-keep">
+            <span><span class="k">CWE</span> 639</span><span><span class="k">OWASP</span> A01:2021</span>
+            <span>own-system</span><span>8 min</span><span class="case__fix">fix ✓</span>
+          </div>
+        </a>
+
+        <a class="case reveal" href="#">
+          <div class="case__top">
+            <span class="case__id mono-keep">CASE 013 · IOT</span>
+            <span class="stamp stamp--lab mono-keep">lab only</span>
+          </div>
+          <h3 class="case__title" data-en="Spoofing an ESP32 telemetry stream in 40 lines"
+              data-ar="انتحال بث ESP32 للقياسات في 40 سطر">Spoofing an ESP32 telemetry stream in 40 lines</h3>
+          <div class="case__meta mono-keep">
+            <span><span class="k">CWE</span> 345</span><span>DPRIMS</span>
+            <span>own-system</span><span>11 min</span><span class="case__fix">fix ✓</span>
+          </div>
+        </a>
+
+        <a class="case reveal" href="#">
+          <div class="case__top">
+            <span class="case__id mono-keep">CASE 012 · WEB</span>
+            <span class="stamp stamp--disclosed mono-keep">disclosed</span>
+          </div>
+          <h3 class="case__title" data-en="Magic bytes are not a file upload policy"
+              data-ar="الـ magic bytes مش سياسة رفع ملفات">Magic bytes are not a file upload policy</h3>
+          <div class="case__meta mono-keep">
+            <span><span class="k">CWE</span> 434</span><span><span class="k">OWASP</span> A04:2021</span>
+            <span>research</span><span>9 min</span><span class="case__fix">fix ✓</span>
+          </div>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ARSENAL -->
+  <section id="arsenal">
+    <div class="wrap">
+      <div class="sec__head reveal">
+        <span class="sec__num mono-keep">§02</span>
+        <h2 class="sec__title" data-en="Arsenal" data-ar="الأدوات">Arsenal</h2>
+        <p class="sec__note" data-en="Tools are only interesting next to what they were used on."
+           data-ar="الأداة مالهاش قيمة من غير ما تقول استخدمتها في إيه.">Tools are only interesting next to what they were used on.</p>
+      </div>
+      <table class="tbl reveal">
+        <thead><tr>
+          <th data-en="Domain" data-ar="المجال">Domain</th>
+          <th data-en="Tools" data-ar="الأدوات">Tools</th>
+          <th data-en="Used on" data-ar="استخدمتها في">Used on</th>
+        </tr></thead>
+        <tbody>
+          <tr>
+            <td data-en="Web security" data-ar="أمن الويب">Web security</td>
+            <td class="tools ltr">Burp Suite · SQLMap · ffuf · Nmap</td>
+            <td data-en="CAP certification, CTFs, reviews of my own apps" data-ar="شهادة CAP، مسابقات CTF، مراجعة تطبيقاتي">CAP certification, CTFs, reviews of my own apps</td>
+          </tr>
+          <tr>
+            <td data-en="Forensics / DFIR" data-ar="التحليل الجنائي">Forensics / DFIR</td>
+            <td class="tools ltr">FTK Imager · Wireshark · Splunk · MITRE ATT&amp;CK</td>
+            <td data-en="eCDFP, ITI DFIR bootcamp" data-ar="شهادة eCDFP ومعسكر ITI للتحليل الجنائي">eCDFP, ITI DFIR bootcamp</td>
+          </tr>
+          <tr>
+            <td data-en="Full-stack" data-ar="تطوير كامل">Full-stack</td>
+            <td class="tools ltr">React · Node.js · Laravel · PostgreSQL · Docker</td>
+            <td data-en="GymOS, Riyadat — systems in daily use" data-ar="GymOS و Riyadat — أنظمة شغّالة يومياً">GymOS, Riyadat — systems in daily use</td>
+          </tr>
+          <tr>
+            <td data-en="Embedded / CV" data-ar="الأنظمة المدمجة والرؤية">Embedded / CV</td>
+            <td class="tools ltr">ESP32 · Python · OpenCV · Socket.io</td>
+            <td data-en="DPRIMS rail defect detection" data-ar="نظام DPRIMS لكشف عيوب القضبان">DPRIMS rail defect detection</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- JOURNEY -->
+  <section id="journey">
+    <div class="wrap">
+      <div class="sec__head reveal">
+        <span class="sec__num mono-keep">§03</span>
+        <h2 class="sec__title" data-en="Journey" data-ar="المسار">Journey</h2>
+        <p class="sec__note" data-en="Each step lists what it actually changed in how I work."
+           data-ar="كل محطة مكتوب تحتها غيّرت إيه فعلاً في شغلي.">Each step lists what it actually changed in how I work.</p>
+      </div>
+      <div class="tl">
+        <div class="tl__i reveal">
+          <div class="tl__y mono-keep">2024</div>
+          <div class="tl__t" data-en="ITI — 120h Cyber Security, then the DFIR bootcamp" data-ar="ITI — 120 ساعة أمن سيبراني، وبعدها معسكر DFIR">ITI — 120h Cyber Security, then the DFIR bootcamp</div>
+          <div class="tl__d" data-en="Learned to read a compromised host as a timeline, not a list of alerts."
+               data-ar="اتعلمت أقرأ الجهاز المخترق كخط زمني، مش كقائمة تنبيهات.">Learned to read a compromised host as a timeline, not a list of alerts.</div>
+        </div>
+        <div class="tl__i reveal">
+          <div class="tl__y mono-keep">2025</div>
+          <div class="tl__t" data-en="CAP · eCDFP · TryHackMe #3 in Egypt" data-ar="شهادتا CAP و eCDFP · الترتيب #3 في مصر على TryHackMe">CAP · eCDFP · TryHackMe #3 in Egypt</div>
+          <div class="tl__d" data-en="Went back through my own auth code and found six things I had been doing wrong."
+               data-ar="رجعت لكود المصادقة بتاعي ولقيت ست حاجات كنت بعملها غلط.">Went back through my own auth code and found six things I had been doing wrong.</div>
+        </div>
+        <div class="tl__i reveal">
+          <div class="tl__y mono-keep">2025</div>
+          <div class="tl__t" data-en="CTF team liel0x1 — ASCWG 19/400+, CAT Reloaded 6th, ICMTC onsite" data-ar="فريق liel0x1 — ASCWG المركز 19 من 400+، CAT Reloaded المركز 6، ICMTC تأهل للنهائي">CTF team liel0x1 — ASCWG 19/400+, CAT Reloaded 6th, ICMTC onsite</div>
+          <div class="tl__d" data-en="Competition taught me speed. Production taught me what speed costs."
+               data-ar="المسابقات علّمتني السرعة. الأنظمة الحقيقية علّمتني السرعة بتكلّف إيه.">Competition taught me speed. Production taught me what speed costs.</div>
+        </div>
+        <div class="tl__i reveal">
+          <div class="tl__y mono-keep">2026</div>
+          <div class="tl__t" data-en="Writing it all down, in public" data-ar="بوثّق كل ده، على المكشوف">Writing it all down, in public</div>
+          <div class="tl__d" data-en="Two writeups a month. Every one ends with the patch."
+               data-ar="تحليلين كل شهر. كل واحد بينتهي بالإصلاح.">Two writeups a month. Every one ends with the patch.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap foot">
+    <span>0xMARO</span>
+    <a href="#" class="ltr">/.well-known/security.txt</a>
+    <a href="#" class="ltr">rss.xml</a>
+    <a href="#" class="ltr">github</a>
+    <span class="foot__end" data-en="Prototype — identity only" data-ar="نموذج أولي — للهوية البصرية فقط">Prototype — identity only</span>
+  </div>
+</footer>
+
+<script>
+(function(){
+  var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* ── language switch ── */
+  var htmlEl = document.documentElement;
+  function setLang(lang){
+    var rtl = lang === 'ar';
+    htmlEl.setAttribute('lang', lang);
+    htmlEl.setAttribute('dir', rtl ? 'rtl' : 'ltr');
+    document.querySelectorAll('[data-en]').forEach(function(el){
+      var val = el.getAttribute('data-' + lang);
+      if (val !== null) el.innerHTML = val;
+    });
+    document.querySelectorAll('.lang button').forEach(function(b){
+      b.setAttribute('aria-pressed', String(b.dataset.lang === lang));
+    });
+    document.title = rtl ? '0xMARO — مخطط واختراق' : '0xMARO — Blueprint & Breach';
+    /* strike element is inside a swapped node: re-create it */
+    var del = document.querySelector('.diff--del .diff__text');
+    if (del && !del.querySelector('.strike')) {
+      var s = document.createElement('span');
+      s.className = 'strike'; s.id = 'strike';
+      s.style.width = '100%';
+      del.appendChild(s);
+    }
+  }
+  document.querySelectorAll('.lang button').forEach(function(b){
+    b.addEventListener('click', function(){ setLang(b.dataset.lang); });
+  });
+
+  /* ── diff hero: once per session ── */
+  var strike = document.getElementById('strike');
+  var addRow = document.getElementById('addRow');
+  var played = sessionStorage.getItem('diffPlayed');
+  if (reduce || played) {
+    if (strike) strike.style.width = '100%';
+    addRow.style.opacity = 1;
+  } else {
+    addRow.style.opacity = 0;
+    setTimeout(function(){
+      if (strike){ strike.style.transition = 'width 420ms cubic-bezier(.4,0,.2,1)'; strike.style.width = '100%'; }
+    }, 420);
+    setTimeout(function(){
+      addRow.style.transition = 'opacity 320ms ease, transform 320ms ease';
+      addRow.style.transform = 'translateY(6px)';
+      addRow.style.opacity = 1;
+      requestAnimationFrame(function(){ addRow.style.transform = 'none'; });
+      sessionStorage.setItem('diffPlayed','1');
+    }, 900);
+  }
+
+  /* ── scroll reveal ── */
+  var io = new IntersectionObserver(function(entries){
+    entries.forEach(function(e){ if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); } });
+  }, {rootMargin:'0px 0px -8% 0px'});
+  document.querySelectorAll('.reveal').forEach(function(el){ io.observe(el); });
+
+  /* ── ruler progress ── */
+  var ind = document.getElementById('railInd');
+  function onScroll(){
+    var h = document.documentElement.scrollHeight - window.innerHeight;
+    var p = h > 0 ? window.scrollY / h : 0;
+    ind.style.top = (p * (window.innerHeight - 4)) + 'px';
+    ind.setAttribute('data-pct', String(Math.round(p*100)).padStart(2,'0'));
+  }
+  window.addEventListener('scroll', onScroll, {passive:true});
+  window.addEventListener('resize', onScroll);
+  onScroll();
+})();
+</script>
+</body>
+</html>
