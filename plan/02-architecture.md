@@ -9,7 +9,7 @@
 | الستايل | **CSS custom properties + طبقة utilities صغيرة** | مش Tailwind. السبب: الهوية دي قايمة على tokens ودقة spacing وRTL logical properties — الـ utility classes هتخليك تكرر نفس الديزاين اللي بنهرب منه |
 | البحث | **Pagefind** | بيبني index بعد الـ build، وبيعمل index منفصل لكل لغة تلقائياً من `<html lang>` — يعني العربي والإنجليزي شغالين من غير أي كونفيج |
 | Syntax highlighting | **Shiki** (مدمج في Astro) | بيتلوّن وقت الـ build → صفر JS |
-| Hosting | **Cloudflare Pages** | مجاني، edge، وبيديك تحكم كامل في الـ headers عبر `_headers` (محتاجينه للـ CSP) |
+| Hosting | **GitHub Pages** (repo: `0xmaroo.github.io`) | مجاني، deploy عن طريق Actions. **ما بيسمحش بأي headers** — CSP وReferrer-Policy عن طريق `<meta>` (شوف §8.1) |
 | Analytics | **Umami** (self-hosted أو cloud) أو **Cloudflare Web Analytics** | بدون كوكيز. موقع أمن معلومات فيه Google Analytics = تناقض |
 | التعليقات | **Giscus** (GitHub Discussions) — مرحلة 5 | مفيش database، والجمهور بتاعك أصلاً على GitHub |
 
@@ -142,7 +142,7 @@ export const forSurface = (entries, surface, lang) =>
 ## 2.6 شجرة المشروع
 
 ```
-0xmaro/
+0xmaroo/
 ├── src/
 │   ├── components/
 │   │   ├── hero/DiffHero.astro          ← التوقيع البصري
@@ -159,7 +159,7 @@ export const forSurface = (entries, surface, lang) =>
 │       ├── index.astro ...              ← الإنجليزي
 │       └── ar/...                       ← العربي
 ├── public/{fonts/, .well-known/security.txt, humans.txt}
-├── _headers                             ← CSP وباقي الـ security headers
+├── .nojekyll                            ← إجباري على GitHub Pages (من غيره `_astro/` بيتبتر)
 └── astro.config.mjs
 ```
 

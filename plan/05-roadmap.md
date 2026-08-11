@@ -10,7 +10,7 @@
 - [ ] احجز الدومين `0xmaro.dev` + فعّل إيميل `me@` و`security@`
 - [ ] `npm create astro@latest` → قالب minimal + TypeScript strict
 - [ ] ضيف: `@astrojs/mdx`, `@astrojs/sitemap`, `@astrojs/rss`, `pagefind`, `sharp`
-- [ ] Repo على GitHub (private في البداية) + Cloudflare Pages متوصل بالـ `main`
+- [ ] Repo على GitHub باسم `0xmaroo.github.io` (user page) + GitHub Pages عن طريق Actions workflow
 - [ ] `.editorconfig` + Prettier + ESLint + Conventional Commits
 - [ ] نزّل خطوط IBM Plex (Sans / Sans Arabic / Mono / Sans Condensed) وحوّلها woff2 + subset، وحطها في `public/fonts`
 
@@ -21,8 +21,7 @@
 ## المرحلة 1 — الهوية والنظام البصري (≈ 12 ساعة)
 
 - [ ] `src/styles/tokens.css` — كل الـ tokens من `03-design-system.md` بالظبط
-- [ ] `base.css` + `typography.css` (المقياس السلس + قواعد العربي الخمسة)
-- [ ] `rtl.css` — قواعد logical properties + منع `letter-spacing` و`uppercase` على العربي
+- [ ] `base.css` (شبكة البلوبِرنت + logical properties) + `typography.css` (المقياس السلس + قواعد العربي الخمسة تحت `html[lang='ar']` — مفيش ملف `rtl.css` منفصل)
 - [ ] `layouts/Base.astro` — head، خطوط، skip link، landmarks
 - [ ] `Header` + `Footer` + `LangSwitch` (بيحافظ على نفس الصفحة عند التبديل، مش بيرجّع للهوم)
 - [ ] **DiffHero** — التوقيع البصري، بالأنيميشن + `prefers-reduced-motion` + `sessionStorage`
@@ -46,7 +45,7 @@
 - [ ] Shiki theme متسق مع الـ tokens (خلي الأصفر الكبريتي للـ strings/highlights)
 - [ ] RSS ×2 + sitemap + `robots.txt`
 - [ ] **اكتب وانشر أول 3 مقالات** (شوف `06-content-backlog.md`)
-- [ ] وصّل الدومين + HSTS
+- [ ] فعّل **Enforce HTTPS** في إعدادات Pages (دومين مخصوص `0xmaro.dev` لاحقاً = غيّر `site` + `CNAME` — الـ `.dev` بيفرض HTTPS تلقائياً)
 
 ### 🚩 نقطة النشر — الموقع أونلاين من هنا
 
@@ -70,15 +69,16 @@
 ## المرحلة 4 — البحث والتلميع (≈ 10 ساعات)
 
 - [ ] Pagefind في الـ build + صفحة `/search` + التحقق من العربي والإنجليزي
+- [ ] `data-pagefind-body` على جسم المقال + `data-pagefind-ignore` على الـ unlisted (شوف §8.6) — وحارس الـ build في `scripts/check-pagefind.sh` بيضمن إن الـ index مش فاضي
 - [ ] Command palette (`⌘K`)
 - [ ] فلاتر الأرشيف بالـ query params (شغالة بدون JS)
 - [ ] Related posts بالـ CWE
 - [ ] Series / سلاسل المقالات
 - [ ] Light mode (لو هتعمله، اعمله صح: بلوبرنت أزرق على ورق)
 - [ ] a11y audit كامل: keyboard-only + قارئ شاشة على صفحة عربية وإنجليزية
-- [ ] Security headers (`_headers`) + `security.txt` + اختبار على securityheaders.com
+- [ ] Security headers بالـ `<meta>` (CSP + Referrer-Policy) + `security.txt` — اللي قابل للتحقيق على GitHub Pages (شوف `08-quality-bar.md` §8.1)
 
-**معيار القبول:** Lighthouse 100/100/100/100 على 3 صفحات مختلفة. `securityheaders.com` = **A+**.
+**معيار القبول:** Lighthouse 100/100/100/100 على 3 صفحات مختلفة. CSP وReferrer-Policy (`<meta>`) على الصفحات الحية، ومفيش `unsafe-inline` في `script-src`.
 
 ---
 

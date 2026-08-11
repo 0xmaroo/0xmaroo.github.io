@@ -2,37 +2,47 @@
 
 > موقع بتاع حد شغال في أمن المعلومات لازم يكون **هو نفسه دليل**. زائر يفتح DevTools ويلاقي headers ناقصة = انطباع أسوأ من عدم وجود موقع.
 
-## 8.1 Security headers — الهدف: A+ على securityheaders.com
+## 8.1 Security headers — CSP وReferrer-Policy عن طريق `<meta>` (A+ على securityheaders.com غير ممكن على GitHub Pages)
 
-`_headers` في Cloudflare Pages:
+**المضيف (مُعتمد — قرار نهائي):** **GitHub Pages** على repo اسمه `0xmaroo.github.io` (user page — عشان كده `base` سايبها `/`). GitHub هو مصدر الحقيقة، والـ deploy عن طريق GitHub Actions (`withastro/action` + `actions/deploy-pages`)، والأمر `npm run build` بيشغّل Astro **وبعدين** Pagefind، والـ artifact = `dist/`.
 
-```
-/*
-  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'; upgrade-insecure-requests
-  Strict-Transport-Security: max-age=63072000; includeSubDomains; preload
-  X-Content-Type-Options: nosniff
-  Referrer-Policy: strict-origin-when-cross-origin
-  Permissions-Policy: camera=(), microphone=(), geolocation=(), interest-cohort=()
-  Cross-Origin-Opener-Policy: same-origin
-  Cross-Origin-Resource-Policy: same-origin
-  X-Frame-Options: DENY
-```
+> **الملاحظة الجوهرية:** GitHub Pages **ما بيديش أي تحكم في الـ response headers** — مفيش ملف `_headers` ولا server config. أي حاجة كانت مكتوبة في `public/_headers` سابقاً مش متاحة هنا. اللي لسه بينفع فوق GitHub Pages هو `<meta http-equiv>` جوه الـ `<head>` بس.
 
-**ملاحظات:**
-- الـ CSP دي بتشتغل لأن كل حاجة self-hosted (الخطوط، السكريبتات). لو ضفت Giscus أو Umami، زوّد النطاق المحدد بس — **متحطش `unsafe-inline` على `script-src` أبداً**.
-- `'unsafe-inline'` على الـ styles مقبولة مؤقتاً بسبب Astro؛ لو عايز تشيلها استخدم hashes.
-- بعد ما تتأكد إن كل حاجة شغالة → قدّم الدومين على [hstspreload.org](https://hstspreload.org).
+**اللي ينفع نعملوه فوق GitHub Pages:**
+
+1. **CSP** — `<meta http-equiv="Content-Security-Policy">`:
+   ```
+   default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self'; base-uri 'self'; form-action 'self'; object-src 'none'; upgrade-insecure-requests
+   ```
+   - مفيش nonces ولا hashes في الـ meta CSP، فعشان `script-src 'self'` يشتغل من غير `unsafe-inline`، **كل السكريبتات لازم تبقى ملفات خارجية**. Astro بيضمّر السكريبتات الصغيرة (أقل من 4KB) inline جوه الصفحة افتراضياً — نضبط `vite.build.assetsInlineLimit: 0` في `astro.config.mjs` علشان كل السكريبتات تتحوّل لملفات `/_astro/*.js`. نفس المنطق للـ styles: `build.inlineStylesheets: 'never'` عشان `style-src 'self'` ما يتكسّرش.
+   - **الـ directives اللي مش بتشتغل في الـ meta:** `frame-ancestors` و`report-to` و`sandbox` — مستحيل ضبطهم من جوه الصفحة.
+2. **Referrer-Policy** — `<meta name="referrer" content="strict-origin-when-cross-origin">`.
+3. **`/.well-known/security.txt`** — ملف static، شغال عادي (§8.2).
+
+**مش متاح على GitHub Pages (خالص):** `Strict-Transport-Security` (HSTS)، `X-Frame-Options`، `X-Content-Type-Options`، `Permissions-Policy`، `Cross-Origin-Opener-Policy` (COOP)، `Cross-Origin-Resource-Policy` (CORP). دي مش متحققة إلا بنقل المضيف أو حطّ CDN قدامه. **نرجع نراجع لو الموقع اتغيّر مضيفه.**
+
+**ملاحظة بخصوص HTTPS:** `*.github.io` شغال بـ HTTPS أصلاً. ولو اتربط دومين `0xmaro.dev` (`.dev`) بعدين، الـ TLD نفسه متقدّم في HSTS preload على مستوى المتصفح — HTTPS اجبارية تلقائياً من غير أي header. يعني فقدان الـ HSTS header عملياً مش فقدان حماية حقيقية في الحالتين.
+
+**نشر:**
+
+- الـ workflow: `npm ci` → `npm run build` (Astro + Pagefind في نفس الأمر — لو Pagefind اتنفذ برّه الـ build، الـ index مش هيبقى جوه الـ artifact اللي بيتنشر) → `upload-pages-artifact` (path: `dist`) → `deploy-pages`.
+- **`public/.nojekyll` إجباري** — من غيره Jekyll بيبتر `_astro/` والموقع بينزل من غير CSS/JS. نتأكد إنه موجود في `dist/` بعد كل build.
+- فعّل **Enforce HTTPS** في إعدادات Pages.
+- كل الـ Actions في `deploy.yml` **مثبتة على commit SHAs كاملة** (مفيش floating tags) — الأمان supply-chain لازم يبقى محسوس في الشغل نفسه. **تراجع الـ SHAs دي على الربع** مع مراجعة Phase 6 في `05-roadmap.md`.
+- لو اتضاف دومين مخصوص يوم من الأيام: غيّر سطر `site` بس في `astro.config.mjs` (معلّم عليه كومنت بأنه السطر الوحيد اللي بيتغيّر) + ضيف `CNAME` — الـ TLS بيشتغل تلقائياً.
 
 ## 8.2 `/.well-known/security.txt` (RFC 9116)
 
 ```
-Contact: mailto:security@0xmaro.dev
+Contact: mailto:__TODO(copy)-عند-المالك-عنوان-فعلي-بيتحكم-فيه-اليوم__
 Expires: 2027-01-01T00:00:00.000Z
 Preferred-Languages: en, ar
-Canonical: https://0xmaro.dev/.well-known/security.txt
-Policy: https://0xmaro.dev/security-policy
+Canonical: https://0xmaroo.github.io/.well-known/security.txt
+Policy: https://0xmaroo.github.io/security-policy
 ```
 تفصيلة صغيرة، بس أي حد في المجال هيلاحظها فوراً. **حط تذكير في التقويم قبل `Expires` بشهر.**
+
+**قبل Phase 4، خد من المالك عنوان اتصال فعلي بيتحكم فيه اليوم** — ممنوع إيميل على دومين احنا مش مالكينه. نفس القاعدة في `humans.txt` وJSON-LD `sameAs`: **روابط/عناوين شغالة بس**، ومفيش `0xmaro.dev` غير مربوط.
 
 ## 8.3 الأداء
 
@@ -71,7 +81,12 @@ Policy: https://0xmaro.dev/security-policy
 
 ## 8.6 قبل كل نشر
 
-- [ ] `npm run build` بدون تحذيرات
+- [ ] `npm run build` بدون تحذيرات (Astro + Pagefind)
+- [ ] فحص الـ index: `scripts/check-pagefind.sh` بيفشل الـ build لو Pagefind طلّع 0 records (منع index فاضي من غير صويت)
+- [ ] `dist/.nojekyll` موجود (من غيره Jekyll بيبتر `_astro/` → الصفحة بتنزل من غير CSS/JS)
+- [ ] نتايج البحث (Pagefind) موجودة جوه الـ output اللي بيتنشر
+- [ ] الـ `<meta http-equiv="Content-Security-Policy">` و`<meta name="referrer">` موجودين في الصفحات الحية (DevTools → Elements). *مش متاح على GitHub Pages:* HSTS / X-Frame-Options / X-Content-Type-Options / Permissions-Policy / COOP / CORP.
+- [ ] راجع الـ pinned SHAs بتاعة الـ Actions في `.github/workflows/deploy.yml` — بتتحدث على الربع (مع Phase 6 في `05-roadmap.md`)
 - [ ] `lychee` — صفر لينكات مكسورة
 - [ ] المقال فيه قسم Fix وقسم Dead ends
 - [ ] كل الـ payloads مغفّلة، ومفيش أي بيانات حقيقية

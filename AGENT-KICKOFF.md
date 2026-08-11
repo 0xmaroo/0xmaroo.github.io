@@ -124,13 +124,14 @@ Acceptance: every number on the site is clickable to a verifiable source, or it 
 ```
 Implement Phase 4: Pagefind indexing in the build, /search, a ⌘K command palette,
 archive filters via query params that work with JavaScript disabled, related posts matched by
-CWE, series support, and the _headers file from plan/08-quality-bar.md §8.1 plus
+CWE, series support, and the meta CSP / Referrer-Policy from plan/08-quality-bar.md §8.1 plus
 /.well-known/security.txt.
 
 Acceptance criteria:
 [ ] Searching an Arabic term returns Arabic results only; an English term returns English only.
 [ ] The archive filters work with JS disabled and the filter state lives in the URL.
-[ ] securityheaders.com scores A+ (no unsafe-inline on script-src).
+[ ] CSP via `<meta>` on live pages with no unsafe-inline on script-src (HSTS/X-Frame-Options/
+    X-Content-Type-Options/Permissions-Policy/COOP/CORP are impossible on GitHub Pages — see plan/08 §8.1).
 [ ] Lighthouse 100/100/100/100 on three different page types.
 [ ] Screen reader pass on one Arabic and one English page — report what you heard.
 ```
