@@ -1,0 +1,131 @@
+---
+import Base from '../layouts/Base.astro';
+import Rail from '../components/Rail.astro';
+import DiffHero from '../components/hero/DiffHero.astro';
+import StatStrip from '../components/proof/StatStrip.astro';
+import CaseFileCard from '../components/cards/CaseFileCard.astro';
+import { useTranslations } from '../i18n/utils';
+import { featuredCases } from '../data/featured-cases';
+import { siteDescription } from '../config/site';
+
+const lang = 'en';
+const t = useTranslations(lang);
+---
+
+<Base lang={lang} title="0xMARO — Blueprint & Breach" description={siteDescription[lang]}>
+  <Rail />
+  <div class="wrap hero">
+    <p class="hero__file ltr">{t('hero.file')}</p>
+    <DiffHero lang={lang} />
+    <p class="hero__sub">{t('hero.sub')}</p>
+    <div class="hero__cta">
+      <a class="btn btn--primary" href="#cases">{t('cta.casefiles')}</a>
+    </div>
+    <StatStrip lang={lang} />
+  </div>
+
+  <section id="cases" aria-labelledby="cases-title">
+    <div class="wrap">
+      <div class="sec__head reveal">
+        <span class="sec__num ltr">{t('sec.cases.num')}</span>
+        <h2 id="cases-title" class="sec__title">{t('sec.cases.title')}</h2>
+        <p class="sec__note">{t('sec.cases.note')}</p>
+      </div>
+
+      <div class="cases reveal">
+        {featuredCases.map((c) => <CaseFileCard lang={lang} data={c} />)}
+      </div>
+    </div>
+  </section>
+</Base>
+
+<script>
+  const revealEls = document.querySelectorAll('.reveal');
+  if ('IntersectionObserver' in window) {
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('is-in');
+            io.unobserve(entry.target);
+          }
+        }
+      },
+      { rootMargin: '0px 0px -8% 0px' }
+    );
+    for (const el of revealEls) io.observe(el);
+  } else {
+    for (const el of revealEls) el.classList.add('is-in');
+  }
+</script>
+
+<style>
+  .hero {
+    padding-block: var(--pad-hero-block);
+  }
+
+  .hero__file {
+    font-family: var(--f-code);
+    font-size: var(--step--1);
+    color: var(--text-dim);
+    margin-block-end: var(--space-5);
+  }
+
+  .hero__file::before {
+    content: '┌ ';
+    color: var(--blue-500);
+  }
+
+  .hero__sub {
+    margin-block-start: var(--space-6);
+    max-width: var(--measure-lead);
+    font-size: var(--step-1);
+    line-height: var(--lh-lead);
+  }
+
+  .hero__cta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+    margin-block-start: var(--space-6);
+  }
+
+  section {
+    padding-block: var(--pad-section-block);
+    border-block-start: var(--hairline) solid var(--line);
+  }
+
+  .sec__head {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-4);
+    flex-wrap: wrap;
+    margin-block-end: var(--space-6);
+  }
+
+  .sec__num {
+    font-family: var(--f-code);
+    font-size: var(--text-sm);
+    color: var(--blue-500);
+  }
+
+  .sec__note {
+    margin-inline-start: auto;
+    max-width: var(--measure-lead);
+    font-size: var(--step--1);
+    color: var(--text-lo);
+  }
+
+  .cases {
+    display: grid;
+    gap: var(--hairline);
+    background: var(--line);
+    border: var(--hairline) solid var(--line);
+  }
+
+  @media (min-width: 820px) {
+    .cases {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+</style>
