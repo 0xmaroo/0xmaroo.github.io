@@ -1,0 +1,84 @@
+---
+import { site } from '../config/site';
+---
+
+<div class="rail" aria-hidden="true">
+  <div class="rail__ticks"></div>
+  <div class="rail__mark ltr">{site.brand}</div>
+  <div class="rail__ind" data-pct="00"></div>
+</div>
+
+<script>
+  const ind = document.querySelector('.rail__ind') as HTMLElement | null;
+  if (ind) {
+    const clamp01 = (v: number) => Math.max(0, Math.min(1, v));
+    const onScroll = () => {
+      const h = document.documentElement.scrollHeight - window.innerHeight;
+      const p = h > 0 ? window.scrollY / h : 0;
+      const c = clamp01(p);
+      ind.style.top = `${c * (window.innerHeight - 4)}px`;
+      ind.setAttribute('data-pct', String(Math.round(c * 100)).padStart(2, '0'));
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onScroll);
+    onScroll();
+  }
+</script>
+
+<style>
+  .rail {
+    position: fixed;
+    inset-block: 0;
+    inset-inline-start: 0;
+    width: var(--rail);
+    z-index: 5;
+    display: none;
+    border-inline-end: var(--hairline) solid var(--line);
+    background: color-mix(in srgb, var(--ink-900) 60%, transparent);
+    backdrop-filter: blur(6px);
+  }
+
+  @media (min-width: 1080px) {
+    .rail {
+      display: block;
+    }
+  }
+
+  .rail__ticks {
+    position: absolute;
+    inset-block: 0;
+    inset-inline-end: 0;
+    width: var(--rail-tick-width);
+    background-image: linear-gradient(var(--line) 1px, transparent 1px);
+    background-size: 100% var(--rail-tick-height);
+  }
+
+  .rail__ind {
+    position: absolute;
+    inset-inline-end: 0;
+    width: var(--rail-ind-width);
+    height: var(--rail-ind-height);
+    background: var(--sulfur-400);
+    transition: top var(--t-fast) linear;
+  }
+
+  .rail__ind::after {
+    content: attr(data-pct);
+    position: absolute;
+    inset-inline-end: var(--rail-ind-gap);
+    top: -0.65em;
+    font-family: var(--f-code);
+    font-size: var(--text-2xs);
+    color: var(--sulfur-400);
+  }
+
+  .rail__mark {
+    position: absolute;
+    inset-inline-start: var(--rail-mark-inset);
+    top: var(--space-6);
+    font-family: var(--f-code);
+    font-size: var(--text-2xs);
+    color: var(--text-dim);
+    writing-mode: vertical-rl;
+  }
+</style>

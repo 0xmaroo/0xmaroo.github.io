@@ -1,0 +1,127 @@
+---
+import { useTranslations } from '../../i18n/utils';
+import type { Language } from '../../i18n/ui';
+
+interface Props {
+  lang: Language;
+}
+
+const { lang } = Astro.props;
+const t = useTranslations(lang);
+---
+
+<h1 class="diff" data-diff>
+  <span class="diff__row diff__row--del">
+    <span class="diff__sign" aria-hidden="true">-</span>
+    <span class="diff__text">
+      {t('hero.line1')}
+      <span class="strike" aria-hidden="true"></span>
+    </span>
+  </span>
+  <span class="diff__row diff__row--add">
+    <span class="diff__sign" aria-hidden="true">+</span>
+    <span class="diff__text">
+      {t('hero.line2.before')}<em>{t('hero.line2.em')}</em>{t('hero.line2.after')}
+    </span>
+  </span>
+</h1>
+
+<script>
+  const diff = document.querySelector('[data-diff]') as HTMLElement | null;
+  if (diff) {
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const played = sessionStorage.getItem('diffPlayed') === '1';
+    diff.dataset.state = reduce || played ? 'final' : 'play';
+    if (!reduce && !played) {
+      window.setTimeout(() => sessionStorage.setItem('diffPlayed', '1'), 1100);
+    }
+  }
+</script>
+
+<style>
+  .diff {
+    border-inline-start: var(--rule-thickness) solid var(--ink-600);
+    padding-inline-start: var(--pad-diff-inline);
+  }
+
+  .diff__row {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-3);
+  }
+
+  .diff__row + .diff__row {
+    margin-block-start: var(--space-2);
+  }
+
+  .diff__row--del {
+    color: var(--text-dim);
+  }
+
+  .diff__sign {
+    color: var(--blue-500);
+    flex: none;
+    opacity: 0.8;
+  }
+
+  .diff__row--add .diff__sign {
+    color: var(--sulfur-400);
+    opacity: 1;
+  }
+
+  .diff__text {
+    position: relative;
+    display: inline-block;
+  }
+
+  .diff__row--add .diff__text {
+    color: var(--text-hi);
+  }
+
+  .diff__text em {
+    font-style: normal;
+    color: var(--sulfur-400);
+  }
+
+  .strike {
+    position: absolute;
+    inset-block-start: 52%;
+    inset-inline-start: calc(var(--rule-thickness) * -1);
+    height: var(--rule-thickness);
+    width: 0;
+    background: var(--blue-500);
+    opacity: 0.85;
+  }
+
+  /* JS final state: strike drawn, both lines fully visible. */
+  .diff[data-state='final'] .strike {
+    width: 100%;
+  }
+
+  /* One-shot animation, total ≈ 1000ms (plan/03-design-system.md §3.4). */
+  html.js .diff[data-state='play'] .diff__row--add {
+    opacity: 0;
+  }
+
+  html.js .diff[data-state='play'] .strike {
+    animation: strike-grow 350ms var(--ease-out) forwards;
+    animation-delay: 250ms;
+  }
+
+  html.js .diff[data-state='play'] .diff__row--add {
+    animation: add-in 300ms ease forwards;
+    animation-delay: 700ms;
+  }
+
+  @keyframes strike-grow {
+    to {
+      width: 100%;
+    }
+  }
+
+  @keyframes add-in {
+    to {
+      opacity: 1;
+    }
+  }
+</style>

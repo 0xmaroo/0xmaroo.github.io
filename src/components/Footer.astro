@@ -1,0 +1,64 @@
+---
+import { useTranslations } from '../i18n/utils';
+import { site } from '../config/site';
+import type { Language } from '../i18n/ui';
+
+interface Props {
+  lang: Language;
+}
+
+const { lang } = Astro.props;
+const t = useTranslations(lang);
+const feedHref = lang === 'ar' ? '/rss-ar.xml' : '/rss.xml';
+---
+
+<footer>
+  <div class="wrap foot">
+    <span class="foot__brand ltr">{site.brand}</span>
+    <a class="ltr" href="/.well-known/security.txt">{t('footer.security')}</a>
+    <a class="ltr" href={feedHref}>{t('footer.rss')}</a>
+    {
+      site.social.github && (
+        <a class="ltr" href={site.social.github} rel="me">
+          {t('footer.github')}
+        </a>
+      )
+    }
+    <span class="foot__end">{t('footer.note')}</span>
+  </div>
+</footer>
+
+<style>
+  footer {
+    border-block-start: var(--hairline) solid var(--line);
+    padding-block: var(--space-7) var(--space-8);
+  }
+
+  .foot {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-4) var(--space-6);
+    align-items: center;
+    font-family: var(--f-code);
+    font-size: var(--text-xs);
+    color: var(--text-dim);
+  }
+
+  .foot a {
+    color: var(--text-lo);
+    text-decoration: none;
+    border-block-end: var(--hairline) solid transparent;
+    min-height: var(--touch-min);
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .foot a:hover {
+    color: var(--sulfur-400);
+    border-block-end-color: var(--sulfur-400);
+  }
+
+  .foot__end {
+    margin-inline-start: auto;
+  }
+</style>

@@ -1,0 +1,78 @@
+---
+import { useTranslations } from '../../i18n/utils';
+import { proofItems } from '../../data/proof';
+import type { Language, UIKey } from '../../i18n/ui';
+
+interface Props {
+  lang: Language;
+}
+
+const { lang } = Astro.props;
+const t = useTranslations(lang);
+
+// F-11: a figure without a proof URL is never rendered.
+const items = proofItems.filter((item) => item.href.length > 0);
+---
+
+{
+  items.length > 0 && (
+    <div class="proof">
+      {items.map((item) => (
+        <a class="proof__i" href={item.href}>
+          <span class="proof__n ltr">{item.value}</span>
+          <span class="u-label proof__l">{item.label[lang]}</span>
+          <span class="proof__v ltr">{t(item.verifyKey as UIKey)}</span>
+        </a>
+      ))}
+    </div>
+  )
+}
+
+<style>
+  .proof {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--hairline);
+    margin-block-start: var(--space-7);
+    background: var(--line);
+    border: var(--hairline) solid var(--line);
+  }
+
+  @media (min-width: 640px) {
+    .proof {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+
+  .proof__i {
+    background: var(--ink-900);
+    padding: var(--space-4) var(--space-5);
+    text-decoration: none;
+    display: block;
+    transition: background var(--t-fast) ease;
+  }
+
+  .proof__i:hover {
+    background: var(--ink-800);
+  }
+
+  .proof__n {
+    font-family: var(--f-code);
+    font-size: var(--step-1);
+    color: var(--text-hi);
+    font-weight: 600;
+    display: block;
+  }
+
+  .proof__l {
+    margin-block-start: var(--space-1);
+  }
+
+  .proof__v {
+    display: block;
+    margin-block-start: var(--space-2);
+    font-family: var(--f-code);
+    font-size: var(--text-2xs);
+    color: var(--blue-400);
+  }
+</style>

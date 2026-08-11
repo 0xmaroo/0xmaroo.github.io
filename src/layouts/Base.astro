@@ -1,0 +1,45 @@
+---
+import '../styles/tokens.css';
+import '../styles/fonts.css';
+import '../styles/base.css';
+import '../styles/typography.css';
+import Header from '../components/nav/Header.astro';
+import Footer from '../components/Footer.astro';
+import { useTranslations } from '../i18n/utils';
+import type { Language } from '../i18n/ui';
+
+interface Props {
+  lang: Language;
+  title: string;
+  description?: string;
+}
+
+const { lang, title, description } = Astro.props;
+const t = useTranslations(lang);
+const dir = lang === 'ar' ? 'rtl' : 'ltr';
+const bodyFont =
+  lang === 'ar' ? '/fonts/IBMPlexSansArabic-400-arab.woff2' : '/fonts/IBMPlexSans-400-latin.woff2';
+---
+
+<!doctype html>
+<html lang={lang} dir={dir}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="generator" content={Astro.generator} />
+    <title>{title}</title>
+    {description && <meta name="description" content={description} />}
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" href="/favicon.ico" />
+    <link rel="preload" href={bodyFont} as="font" type="font/woff2" crossorigin="anonymous" />
+    <script src="/js/root.js" is:inline></script>
+  </head>
+  <body>
+    <a class="skip" href="#main">{t('skip')}</a>
+    <Header lang={lang} />
+    <main id="main">
+      <slot />
+    </main>
+    <Footer lang={lang} />
+  </body>
+</html>

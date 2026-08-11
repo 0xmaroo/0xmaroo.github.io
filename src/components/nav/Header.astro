@@ -1,0 +1,106 @@
+---
+import { getRelativeLocaleUrl } from 'astro:i18n';
+import { useTranslations } from '../../i18n/utils';
+import { sections, sectionPaths } from '../../config/site';
+import type { Language, UIKey } from '../../i18n/ui';
+import LangSwitch from './LangSwitch.astro';
+
+interface Props {
+  lang: Language;
+}
+
+const { lang } = Astro.props;
+const t = useTranslations(lang);
+
+type SectionEntry = [keyof typeof sections, { enabled: boolean; inNav: boolean }];
+
+const navItems = (Object.entries(sections) as SectionEntry[])
+  .filter(([, conf]) => conf.enabled && conf.inNav)
+  .map(([key]) => ({
+    href: getRelativeLocaleUrl(lang, sectionPaths[key]),
+    label: t(`nav.${key}` as UIKey),
+  }));
+---
+
+<header>
+  <div class="wrap nav">
+    <a class="brand ltr" href={getRelativeLocaleUrl(lang, '/')}>
+      0x<span>MARO</span>
+    </a>
+    <nav class="nav__links" aria-label={t('nav.primary')}>
+      {navItems.map((item) => <a href={item.href}>{item.label}</a>)}
+    </nav>
+    <LangSwitch lang={lang} />
+  </div>
+</header>
+
+<style>
+  header {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: color-mix(in srgb, var(--ink-900) 82%, transparent);
+    backdrop-filter: blur(10px);
+    border-block-end: var(--hairline) solid var(--line);
+  }
+
+  .nav {
+    display: flex;
+    align-items: center;
+    gap: var(--space-5);
+    padding-block: var(--space-4);
+  }
+
+  .brand {
+    font-family: var(--f-display);
+    font-weight: 700;
+    letter-spacing: var(--ls-display);
+    color: var(--text-hi);
+    text-decoration: none;
+    font-size: var(--step-0);
+  }
+
+  .brand span {
+    color: var(--sulfur-400);
+  }
+
+  .nav__links {
+    display: none;
+    gap: var(--space-5);
+    margin-inline-start: auto;
+  }
+
+  @media (min-width: 760px) {
+    .nav__links {
+      display: flex;
+    }
+  }
+
+  .nav__links a {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--touch-min);
+    padding-inline: var(--space-2);
+    font-family: var(--f-cond);
+    text-transform: uppercase;
+    letter-spacing: var(--ls-label);
+    font-size: var(--text-sm);
+    color: var(--text-lo);
+    text-decoration: none;
+    border-block-end: var(--hairline) solid transparent;
+    transition:
+      color var(--t-fast) ease,
+      border-color var(--t-fast) ease;
+  }
+
+  .nav__links a:hover {
+    color: var(--text-hi);
+    border-block-end-color: var(--sulfur-400);
+  }
+
+  html[lang='ar'] .nav__links a {
+    font-family: var(--f-body-ar);
+    text-transform: none;
+    letter-spacing: 0;
+  }
+</style>

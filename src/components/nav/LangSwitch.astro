@@ -1,0 +1,77 @@
+---
+import { getRelativeLocaleUrl } from 'astro:i18n';
+import { useTranslations } from '../../i18n/utils';
+import type { Language } from '../../i18n/ui';
+
+interface Props {
+  lang: Language;
+}
+
+const { lang } = Astro.props;
+const t = useTranslations(lang);
+
+// Keep the visitor on the same page when switching language (AGENT-KICKOFF §1).
+const currentPath = Astro.url.pathname
+  .replace(/\/$/, '')
+  .replace(new RegExp(`^/${lang}(?=/|$)`), '');
+
+const pathArg = currentPath.length > 0 ? currentPath.slice(1) : undefined;
+
+const enHref = getRelativeLocaleUrl('en', pathArg);
+const arHref = getRelativeLocaleUrl('ar', pathArg);
+
+const isAr = lang === 'ar';
+---
+
+<nav class="lang" aria-label={t('lang.switch')}>
+  <a
+    href={enHref}
+    lang="en"
+    class="ltr"
+    aria-label={t('lang.en')}
+    aria-current={lang === 'en' ? 'true' : undefined}
+  >
+    EN
+  </a>
+  <a href={arHref} lang="ar" aria-label={t('lang.ar')} aria-current={isAr ? 'true' : undefined}>
+    ع
+  </a>
+</nav>
+
+<style>
+  .lang {
+    display: flex;
+    border: var(--hairline) solid var(--ink-600);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+
+  .lang a {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--touch-min);
+    padding-inline: var(--space-3);
+    font-family: var(--f-code);
+    font-size: var(--text-sm);
+    color: var(--text-lo);
+    text-decoration: none;
+  }
+
+  .lang a[lang='ar'] {
+    font-family: var(--f-body-ar);
+  }
+
+  .lang a[aria-current='true'] {
+    background: var(--sulfur-400);
+    color: var(--ink-900);
+    font-weight: 600;
+  }
+
+  .lang a:hover {
+    color: var(--text-hi);
+  }
+
+  .lang a[aria-current='true']:hover {
+    color: var(--ink-900);
+  }
+</style>
