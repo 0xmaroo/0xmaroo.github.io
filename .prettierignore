@@ -1,0 +1,8 @@
+dist/
+node_modules/
+.astro/
+package-lock.json
+plan/
+prototype/
+AGENT-KICKOFF.md
+README.md
