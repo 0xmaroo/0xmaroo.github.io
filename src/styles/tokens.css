@@ -1,0 +1,115 @@
+:root {
+  /* ── Surfaces — أزرق-أسود، مش أسود صافي (plan §3.1) ── */
+  --ink-900: #080a0f;
+  --ink-800: #0d1017;
+  --ink-700: #141924;
+  --ink-600: #1d2534;
+  --line: #1a202c;
+  --grid: #10141d;
+
+  /* ── Text (plan §3.1) ── */
+  --text-hi: #e8ebf0;
+  --text: #b6bdca;
+  --text-lo: #6f7a8c;
+  --text-dim: #4a5364;
+
+  /* ── Blueprint (البناء) (plan §3.1) ── */
+  --blue-400: #7fa6ff;
+  --blue-500: #4e7cf6;
+  --blue-900: #101a33;
+
+  /* ── Breach (الكسر) — التوقيع (plan §3.1) ── */
+  --sulfur-300: #f2e3a0;
+  --sulfur-400: #e3c567;
+  --sulfur-500: #c9a73e;
+  --sulfur-900: #211c08;
+
+  /* ── Stamp — severity فقط (plan §3.1) ── */
+  --stamp-crit: #c6453c;
+  --stamp-high: #c2683a;
+  --stamp-med: #a08a3c;
+  --stamp-low: #4e7cf6;
+  --ok: #3f9d6b;
+
+  /* ── Fluid type scale (plan §3.2 verbatim) ── */
+  --step--1: clamp(0.83rem, 0.8rem + 0.15vw, 0.9rem);
+  --step-0: clamp(1rem, 0.96rem + 0.2vw, 1.08rem);
+  --step-1: clamp(1.25rem, 1.15rem + 0.5vw, 1.5rem);
+  --step-2: clamp(1.6rem, 1.4rem + 1vw, 2.2rem);
+  --step-3: clamp(2.1rem, 1.7rem + 2vw, 3.2rem);
+  --step-4: clamp(2.8rem, 2rem + 4vw, 5rem);
+
+  /* ── Type roles (plan §3.2) ── */
+  --f-display: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  --f-body: 'IBM Plex Sans', system-ui, -apple-system, sans-serif;
+  --f-body-ar: 'IBM Plex Sans Arabic', 'IBM Plex Sans', system-ui, sans-serif;
+  --f-cond: 'IBM Plex Sans Condensed', 'IBM Plex Sans', system-ui, sans-serif;
+  --f-code: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  /* ── UI text sizes (not part of the type scale) ── */
+  --text-2xs: clamp(0.6rem, 0.58rem + 0.1vw, 0.66rem);
+  --text-xs: clamp(0.68rem, 0.66rem + 0.1vw, 0.74rem);
+  --text-sm: clamp(0.78rem, 0.75rem + 0.15vw, 0.85rem);
+
+  /* ── Spacing scale ── */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --space-7: 3rem;
+  --space-8: 4rem;
+
+  /* ── Layout (plan §3.3) ── */
+  --wrap: 1180px;
+  --rail: 56px;
+  --radius: 2px;
+  --hairline: 1px;
+  --rule-thickness: 2px;
+  --touch-min: 44px;
+  --grid-size: 88px;
+
+  /* ── Component padding (fluid, blueprint rhythm) ── */
+  --pad-wrap-inline: clamp(1.1rem, 4vw, 2.5rem);
+  --pad-hero-block: clamp(3.5rem, 10vw, 7rem) clamp(2.5rem, 6vw, 4.5rem);
+  --pad-section-block: clamp(3rem, 7vw, 5rem);
+  --pad-diff-inline: clamp(0.9rem, 2.5vw, 1.6rem);
+
+  /* ── Line measures (plan §3.2: 68ch EN / 72ch AR) ── */
+  --measure-read: 68ch;
+  --measure-read-ar: 72ch;
+  --measure-lead: 56ch;
+
+  /* ── Rail (ruler) metrics ── */
+  --rail-tick-width: 14px;
+  --rail-tick-height: 16px;
+  --rail-ind-width: 26px;
+  --rail-ind-height: var(--rule-thickness);
+  --rail-ind-gap: 32px;
+  --rail-mark-inset: 10px;
+
+  /* ── Line heights (plan §3.2) ── */
+  --lh-body: 1.65;
+  --lh-ar: 1.85;
+  --lh-display: 1.16;
+  --lh-ar-display: 1.5;
+  --lh-lead: 1.5;
+
+  /* ── Letter spacing (Arabic overrides to 0 in typography.css) ── */
+  --ls-display: -0.02em;
+  --ls-label: 0.08em;
+  --ls-meta: 0.04em;
+  --ls-stamp: 0.1em;
+
+  /* ── Motion (plan §3.6) ── */
+  --t-fast: 160ms;
+  --t-med: 320ms;
+  --t-slow: 420ms;
+  --ease-out: cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* ── Focus ring (plan §3.7) ── */
+  --focus-width: 2px;
+  --focus-color: var(--sulfur-400);
+  --focus-offset: 3px;
+}

@@ -1,0 +1,174 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  background: var(--ink-900);
+  color: var(--text);
+  font-family: var(--f-body);
+  font-size: var(--step-0);
+  line-height: var(--lh-body);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* ── Blueprint grid, pure CSS (plan/03-design-system.md §3.0) ── */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(var(--grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid) 1px, transparent 1px),
+    radial-gradient(
+      ellipse 120% 70% at 50% -10%,
+      color-mix(in srgb, var(--blue-500) 10%, transparent),
+      transparent 60%
+    );
+  background-size:
+    var(--grid-size) var(--grid-size),
+    var(--grid-size) var(--grid-size),
+    100% 100%;
+  mask-image: linear-gradient(180deg, var(--ink-900) 0%, var(--ink-900) 55%, transparent 100%);
+}
+
+/* Content sits above the fixed grid layer. */
+.wrap,
+header,
+footer,
+section {
+  position: relative;
+  z-index: 1;
+}
+
+.wrap {
+  max-width: var(--wrap);
+  margin-inline: auto;
+  padding-inline: var(--pad-wrap-inline);
+}
+
+img,
+svg {
+  display: block;
+  max-width: 100%;
+}
+
+a {
+  color: inherit;
+}
+
+/* ── Focus ring (plan/03-design-system.md §3.7) ── */
+:where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+  outline: var(--focus-width) solid var(--focus-color);
+  outline-offset: var(--focus-offset);
+  border-radius: var(--radius);
+}
+
+/* ── Skip link ── */
+.skip {
+  position: absolute;
+  inset-inline-start: -999px;
+  top: 0;
+  background: var(--sulfur-400);
+  color: var(--ink-900);
+  padding: var(--space-3) var(--space-4);
+  z-index: 99;
+  text-decoration: none;
+}
+
+.skip:focus {
+  inset-inline-start: 0;
+}
+
+/* ── Utility: force LTR for code / technical strings ── */
+.ltr,
+code,
+pre,
+kbd,
+samp {
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+
+/* ── Buttons (44px touch floor, plan/03-design-system.md §3.7) ── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--touch-min);
+  padding-inline: var(--space-5);
+  text-decoration: none;
+  font-family: var(--f-cond);
+  text-transform: uppercase;
+  letter-spacing: var(--ls-label);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  border: var(--hairline) solid var(--ink-600);
+  border-radius: var(--radius);
+  color: var(--text-hi);
+  background: var(--ink-800);
+  transition:
+    border-color var(--t-fast) ease,
+    color var(--t-fast) ease,
+    transform var(--t-fast) ease;
+}
+
+.btn:hover {
+  border-color: var(--sulfur-400);
+  color: var(--sulfur-300);
+}
+
+.btn--primary {
+  background: var(--sulfur-400);
+  color: var(--ink-900);
+  border-color: var(--sulfur-400);
+}
+
+.btn--primary:hover {
+  background: var(--sulfur-300);
+  color: var(--ink-900);
+}
+
+/* ── Scroll reveal (plan/03-design-system.md §3.6) ── */
+html.js .reveal {
+  opacity: 0;
+  transform: translateY(8px);
+}
+
+html.js .reveal.is-in {
+  opacity: 1;
+  transform: none;
+  transition:
+    opacity var(--t-med) ease,
+    transform var(--t-med) ease;
+}
+
+/* ── Reduced motion (plan/03-design-system.md §3.6) ── */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  html.js .reveal,
+  html.js .reveal.is-in {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

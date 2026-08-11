@@ -1,0 +1,102 @@
+/*
+ * Typography — the four IBM Plex roles from plan/03-design-system.md §3.2,
+ * the fluid scale, and the five Arabic rules applied under [lang="ar"].
+ */
+
+/* ── Roles ── */
+body {
+  font-family: var(--f-body);
+}
+
+h1,
+h2,
+h3,
+.display {
+  font-family: var(--f-display);
+  font-weight: 600;
+  letter-spacing: var(--ls-display);
+  line-height: var(--lh-display);
+  color: var(--text-hi);
+}
+
+h1 {
+  margin: 0;
+  font-size: var(--step-4);
+}
+
+h2 {
+  font-size: var(--step-2);
+}
+
+h3 {
+  font-size: var(--step-1);
+}
+
+/* Condensed utility label — section eyebrows, metadata */
+.u-label {
+  font-family: var(--f-cond);
+  text-transform: uppercase;
+  letter-spacing: var(--ls-label);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--text-lo);
+}
+
+code,
+kbd,
+samp,
+.mono {
+  font-family: var(--f-code);
+}
+
+/* Reading width: 68ch EN / 72ch AR */
+.reading {
+  max-width: var(--measure-read);
+}
+
+/* ── The five Arabic rules (plan/03-design-system.md §3.2) ── */
+html[lang='ar'] body,
+body[lang='ar'],
+[lang='ar'] {
+  font-family: var(--f-body-ar);
+  line-height: var(--lh-ar);
+}
+
+html[lang='ar'] .u-label,
+html[lang='ar'] h1,
+html[lang='ar'] h2,
+html[lang='ar'] h3,
+html[lang='ar'] .display,
+html[lang='ar'] .btn {
+  text-transform: none !important;
+  letter-spacing: 0 !important;
+  font-family: var(--f-body-ar);
+}
+
+html[lang='ar'] h1,
+html[lang='ar'] h2,
+html[lang='ar'] h3,
+html[lang='ar'] .display {
+  line-height: var(--lh-ar-display);
+}
+
+html[lang='ar'] * {
+  letter-spacing: 0 !important;
+  text-transform: none !important;
+}
+
+html[lang='ar'] .reading {
+  max-width: var(--measure-read-ar);
+}
+
+/* Arabic stays right-side-up wherever the page layout is RTL; technical
+   strings keep the LTR font because the page-level override targets [lang]. */
+html[lang='ar'] .ltr,
+html[lang='ar'] code,
+html[lang='ar'] pre,
+html[lang='ar'] kbd,
+html[lang='ar'] samp {
+  font-family: var(--f-code);
+  direction: ltr;
+  unicode-bidi: isolate;
+}
