@@ -1,0 +1,86 @@
+---
+import { useTranslations } from '../../i18n/utils';
+import type { Language } from '../../i18n/ui';
+
+interface Props {
+  /** Optional window title shown in the terminal bar. */
+  title?: string;
+  /** Terminal transcript — plain string, kept raw (no MDX parsing). */
+  code?: string;
+}
+
+const { title, code } = Astro.props;
+const lang = (Astro.currentLocale ?? 'en') as Language;
+const t = useTranslations(lang);
+---
+
+<figure class="terminal" dir="ltr">
+  <figcaption class="terminal__bar">
+    <span class="terminal__dots" aria-hidden="true">
+      <span class="terminal__dot"></span>
+      <span class="terminal__dot"></span>
+      <span class="terminal__dot"></span>
+    </span>
+    <span class="terminal__title ltr">{title ?? t('writeup.terminal')}</span>
+  </figcaption>
+  <pre class="terminal__body"><code>{code ?? <slot />}</code></pre>
+</figure>
+
+<style>
+  .terminal {
+    margin-block: var(--space-6);
+    background: var(--ink-900);
+    border: var(--hairline) solid var(--line);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+
+  .terminal__bar {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-2) var(--space-4);
+    background: var(--ink-800);
+    border-block-end: var(--hairline) solid var(--line);
+  }
+
+  .terminal__dots {
+    display: inline-flex;
+    gap: var(--space-2);
+  }
+
+  .terminal__dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--ink-600);
+  }
+
+  .terminal__dot:nth-child(1) {
+    background: var(--text-dim);
+  }
+
+  .terminal__dot:nth-child(2) {
+    background: var(--text-lo);
+  }
+
+  .terminal__dot:nth-child(3) {
+    background: var(--sulfur-500);
+  }
+
+  .terminal__title {
+    font-family: var(--f-code);
+    font-size: var(--text-xs);
+    color: var(--text-lo);
+  }
+
+  .terminal__body {
+    margin: 0;
+    padding: var(--space-4);
+    overflow-x: auto;
+    font-family: var(--f-code);
+    font-size: var(--step--1);
+    line-height: 1.7;
+    color: var(--text);
+  }
+</style>

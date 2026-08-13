@@ -1,0 +1,150 @@
+---
+import { useTranslations } from '../../i18n/utils';
+import type { Language } from '../../i18n/ui';
+
+interface Props {
+  /** Payload language tag, kept English and technical — e.g. `http`, `sql`. */
+  lang?: string;
+  /** Show the "sanitized" badge (plan/06-content-backlog.md — تغفيل). */
+  sanitized?: boolean;
+  /**
+   * Payload text. Pass as a JS string literal so MDX never parses `<` inside
+   * the payload as markup. Without it, children are rendered as-is.
+   */
+  code?: string;
+}
+
+const { lang = '', sanitized = false, code }: Props = Astro.props;
+const locale = (Astro.currentLocale ?? 'en') as Language;
+const t = useTranslations(locale);
+---
+
+<figure class="payload" dir="ltr">
+  <figcaption class="payload__bar">
+    <span class="payload__tag ltr">{lang}</span>
+    <span class="payload__label ltr">{t('writeup.payload')}</span>
+    {sanitized && <span class="payload__san ltr">{t('writeup.sanitized')}</span>}
+    <button
+      class="payload__copy ltr"
+      type="button"
+      data-copy
+      data-copy-done={t('writeup.copied')}
+      aria-label={t('writeup.copy')}
+    >
+      <span data-copy-text>{t('writeup.copy')}</span>
+    </button>
+  </figcaption>
+  <pre class="payload__body" data-copy-source>{code ?? <slot />}</pre>
+</figure>
+
+<script>
+  document.addEventListener('click', (e) => {
+    const btn = (e.target as HTMLElement).closest('[data-copy]') as HTMLButtonElement | null;
+    if (!btn) return;
+    const root = btn.closest('.payload') as HTMLElement | null;
+    const src = root?.querySelector('[data-copy-source]') as HTMLElement | null;
+    const label = btn.querySelector('[data-copy-text]') as HTMLElement | null;
+    if (!src || !label) return;
+    const copy = async () => {
+      try {
+        await navigator.clipboard.writeText(src.textContent ?? '');
+      } catch {
+        const range = document.createRange();
+        range.selectNodeContents(src);
+        const sel = window.getSelection();
+        sel?.removeAllRanges();
+        const exec = (document as unknown as { execCommand: (commandId: string) => boolean })
+          .execCommand;
+        exec('copy');
+        sel?.removeAllRanges();
+      }
+    };
+    copy().then(() => {
+      const prev = label.textContent;
+      label.textContent = btn.dataset.copyDone ?? 'Copied';
+      window.setTimeout(() => {
+        label.textContent = prev;
+      }, 1200);
+    });
+  });
+</script>
+
+<style>
+  .payload {
+    margin-block: var(--space-6);
+    border: var(--hairline) solid var(--line);
+    border-inline-start: var(--rule-thickness) solid var(--sulfur-400);
+    background: var(--ink-800);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+
+  .payload__bar {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-2) var(--space-4);
+    border-block-end: var(--hairline) solid var(--line);
+    background: var(--ink-900);
+  }
+
+  .payload__tag {
+    font-family: var(--f-code);
+    font-size: var(--text-2xs);
+    text-transform: uppercase;
+    letter-spacing: var(--ls-meta);
+    color: var(--blue-400);
+    border: var(--hairline) solid var(--ink-600);
+    border-radius: var(--radius);
+    padding: 0.15em 0.5em;
+  }
+
+  .payload__label {
+    font-family: var(--f-cond);
+    font-size: var(--text-xs);
+    text-transform: uppercase;
+    letter-spacing: var(--ls-label);
+    color: var(--text-lo);
+  }
+
+  .payload__san {
+    font-family: var(--f-code);
+    font-size: var(--text-2xs);
+    color: var(--text-lo);
+    border-block-end: var(--hairline) dotted var(--text-dim);
+  }
+
+  .payload__copy {
+    margin-inline-start: auto;
+    min-height: var(--touch-min);
+    min-width: var(--touch-min);
+    padding-inline: var(--space-3);
+    font-family: var(--f-cond);
+    font-size: var(--text-xs);
+    text-transform: uppercase;
+    letter-spacing: var(--ls-label);
+    color: var(--text-lo);
+    background: none;
+    border: var(--hairline) solid var(--ink-600);
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition:
+      color var(--t-fast) ease,
+      border-color var(--t-fast) ease;
+  }
+
+  .payload__copy:hover {
+    color: var(--sulfur-300);
+    border-color: var(--sulfur-500);
+  }
+
+  .payload__body {
+    margin: 0;
+    padding: var(--space-4);
+    overflow-x: auto;
+    font-family: var(--f-code);
+    font-size: var(--step--1);
+    line-height: 1.7;
+    color: var(--text);
+  }
+</style>

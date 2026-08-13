@@ -1,0 +1,107 @@
+---
+import { useTranslations } from '../../i18n/utils';
+import type { Language } from '../../i18n/ui';
+
+interface Props {
+  /** Code before the fix — plain string, kept raw (no MDX parsing). */
+  before: string;
+  /** Code after the fix — plain string. */
+  after: string;
+}
+
+const { before, after } = Astro.props;
+const lang = (Astro.currentLocale ?? 'en') as Language;
+const t = useTranslations(lang);
+---
+
+<figure class="fixdiff" dir="ltr">
+  <figcaption class="fixdiff__cap">
+    <span class="fixdiff__label fixdiff__label--before ltr">− {t('writeup.before')}</span>
+    <span class="fixdiff__label fixdiff__label--after ltr">+ {t('writeup.after')}</span>
+  </figcaption>
+  <div class="fixdiff__grid">
+    <pre class="fixdiff__pre fixdiff__pre--before"><code>{before}</code></pre>
+    <pre class="fixdiff__pre fixdiff__pre--after"><code>{after}</code></pre>
+  </div>
+</figure>
+
+<style>
+  .fixdiff {
+    margin-block: var(--space-6);
+    border: var(--hairline) solid var(--line);
+    border-radius: var(--radius);
+    background: var(--ink-800);
+    overflow: hidden;
+  }
+
+  .fixdiff__cap {
+    display: flex;
+    gap: var(--space-2);
+    padding: var(--space-2) var(--space-4);
+    border-block-end: var(--hairline) solid var(--line);
+    background: var(--ink-900);
+  }
+
+  .fixdiff__label {
+    font-family: var(--f-cond);
+    font-size: var(--text-xs);
+    text-transform: uppercase;
+    letter-spacing: var(--ls-label);
+    padding-inline-end: var(--space-3);
+    border-inline-end: var(--hairline) solid var(--line);
+  }
+
+  .fixdiff__label:last-child {
+    border-inline-end: 0;
+  }
+
+  .fixdiff__label--before {
+    color: var(--text-lo);
+  }
+
+  .fixdiff__label--after {
+    color: var(--sulfur-400);
+  }
+
+  .fixdiff__grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+
+  @media (min-width: 820px) {
+    .fixdiff__grid {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+
+  .fixdiff__pre {
+    margin: 0;
+    padding: var(--space-4);
+    overflow-x: auto;
+    font-family: var(--f-code);
+    font-size: var(--step--1);
+    line-height: 1.7;
+  }
+
+  .fixdiff__pre--before {
+    color: var(--text-lo);
+    border-block-end: var(--hairline) solid var(--line);
+    background: var(--ink-900);
+  }
+
+  .fixdiff__pre--after {
+    color: var(--text-hi);
+  }
+
+  @media (min-width: 820px) {
+    .fixdiff__pre--before {
+      border-block-end: 0;
+      border-inline-end: var(--hairline) solid var(--line);
+    }
+  }
+
+  .fixdiff__pre--before code {
+    color: inherit;
+  }
+</style>

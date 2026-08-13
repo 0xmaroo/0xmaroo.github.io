@@ -83,6 +83,7 @@ Policy: https://0xmaroo.github.io/security-policy
 
 - [ ] `npm run build` بدون تحذيرات (Astro + Pagefind)
 - [ ] فحص الـ index: `scripts/check-pagefind.sh` بيفشل الـ build لو Pagefind طلّع 0 records (منع index فاضي من غير صويت)
+- [ ] `data-pagefind-body` على جسم المقال بس. **تصحيح (2026-08):** `data-pagefind-ignore` عند Pagefind حصرية على مستوى العناصر جوه الصفحة — مش بتستبعد الصفحة كلها. عشان مقال `unlisted` أو `hideFrom: ['search']` يختفي من البحث، بنشيل `data-pagefind-body` منه أصلاً (مش بنضيف ignore). التنفيذ في `layouts/Writeup.astro`.
 - [ ] `dist/.nojekyll` موجود (من غيره Jekyll بيبتر `_astro/` → الصفحة بتنزل من غير CSS/JS)
 - [ ] نتايج البحث (Pagefind) موجودة جوه الـ output اللي بيتنشر
 - [ ] الـ `<meta http-equiv="Content-Security-Policy">` و`<meta name="referrer">` موجودين في الصفحات الحية (DevTools → Elements). *مش متاح على GitHub Pages:* HSTS / X-Frame-Options / X-Content-Type-Options / Permissions-Policy / COOP / CORP.

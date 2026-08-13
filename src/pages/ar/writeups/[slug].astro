@@ -1,0 +1,21 @@
+---
+import Writeup from '../../../layouts/Writeup.astro';
+import { getCollection } from 'astro:content';
+import { buildsInProd, getTranslation, slugOf } from '../../../lib/content';
+import { registerSitemapExclusions } from '../../../lib/sitemap-exclude';
+
+export async function getStaticPaths() {
+  const entries = await getCollection('writeups');
+  await registerSitemapExclusions();
+  return entries
+    .filter((e) => e.data.lang === 'ar' && buildsInProd(e))
+    .map((entry) => ({
+      params: { slug: slugOf(entry) },
+      props: { entry, translation: getTranslation(entries, entry) },
+    }));
+}
+
+const { entry, translation } = Astro.props;
+---
+
+<Writeup entry={entry} translation={translation} />

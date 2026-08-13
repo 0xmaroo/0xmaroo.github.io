@@ -1,0 +1,55 @@
+---
+interface Props {
+  /** Semantic tone that maps to a stamp token — severity/status only. */
+  variant: 'ok' | 'blue' | 'high' | 'med' | 'crit' | 'low' | 'info';
+  /** Localized label — the component never invents UI text. */
+  label: string;
+}
+
+const { variant, label } = Astro.props;
+---
+
+<span class:list={[`stamp stamp--${variant}`, 'ltr']}>{label}</span>
+
+<style>
+  .stamp {
+    font-family: var(--f-code);
+    font-size: var(--text-2xs);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: var(--ls-stamp);
+    padding: var(--space-1) var(--space-2);
+    border: var(--hairline) solid currentColor;
+    border-radius: var(--radius);
+    transform: rotate(-3deg);
+    white-space: nowrap;
+  }
+
+  .stamp--ok {
+    color: var(--ok);
+  }
+
+  .stamp--blue {
+    color: var(--blue-400);
+  }
+
+  .stamp--crit {
+    color: var(--stamp-crit);
+  }
+
+  .stamp--high {
+    color: var(--stamp-high);
+  }
+
+  .stamp--med {
+    color: var(--stamp-med);
+  }
+
+  .stamp--low {
+    color: var(--stamp-low);
+  }
+
+  .stamp--info {
+    color: var(--blue-400);
+  }
+</style>

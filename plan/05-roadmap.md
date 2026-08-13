@@ -69,7 +69,7 @@
 ## المرحلة 4 — البحث والتلميع (≈ 10 ساعات)
 
 - [ ] Pagefind في الـ build + صفحة `/search` + التحقق من العربي والإنجليزي
-- [ ] `data-pagefind-body` على جسم المقال + `data-pagefind-ignore` على الـ unlisted (شوف §8.6) — وحارس الـ build في `scripts/check-pagefind.sh` بيضمن إن الـ index مش فاضي
+- [ ] `data-pagefind-body` على جسم المقال، وشيله من المقالات `unlisted` / `hideFrom: ['search']` (شوف §8.6 — التصحيح: `data-pagefind-ignore` مش بيستبعد صفحة كاملة عند Pagefind) — وحارس الـ build في `scripts/check-pagefind.sh` بيضمن إن الـ index مش فاضي
 - [ ] Command palette (`⌘K`)
 - [ ] فلاتر الأرشيف بالـ query params (شغالة بدون JS)
 - [ ] Related posts بالـ CWE

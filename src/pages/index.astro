@@ -3,13 +3,17 @@ import Base from '../layouts/Base.astro';
 import Rail from '../components/Rail.astro';
 import DiffHero from '../components/hero/DiffHero.astro';
 import StatStrip from '../components/proof/StatStrip.astro';
-import CaseFileCard from '../components/cards/CaseFileCard.astro';
+import WriteupCard from '../components/cards/WriteupCard.astro';
+import { getCollection } from 'astro:content';
+import { caseNumbers, featuredOnHome, slugOf } from '../lib/content';
 import { useTranslations } from '../i18n/utils';
-import { featuredCases } from '../data/featured-cases';
 import { siteDescription } from '../config/site';
 
 const lang = 'en';
 const t = useTranslations(lang);
+const entries = await getCollection('writeups');
+const featured = featuredOnHome(entries, lang);
+const numbers = caseNumbers(entries);
 ---
 
 <Base lang={lang} title="0xMARO — Blueprint & Breach" description={siteDescription[lang]}>
@@ -24,19 +28,25 @@ const t = useTranslations(lang);
     <StatStrip lang={lang} />
   </div>
 
-  <section id="cases" aria-labelledby="cases-title">
-    <div class="wrap">
-      <div class="sec__head reveal">
-        <span class="sec__num ltr">{t('sec.cases.num')}</span>
-        <h2 id="cases-title" class="sec__title">{t('sec.cases.title')}</h2>
-        <p class="sec__note">{t('sec.cases.note')}</p>
-      </div>
+  {
+    featured.length > 0 && (
+      <section id="cases" aria-labelledby="cases-title">
+        <div class="wrap">
+          <div class="sec__head reveal">
+            <span class="sec__num ltr">{t('sec.cases.num')}</span>
+            <h2 id="cases-title" class="sec__title">{t('sec.cases.title')}</h2>
+            <p class="sec__note">{t('sec.cases.note')}</p>
+          </div>
 
-      <div class="cases reveal">
-        {featuredCases.map((c) => <CaseFileCard lang={lang} data={c} />)}
-      </div>
-    </div>
-  </section>
+          <div class="cases reveal">
+            {featured.map((e) => (
+              <WriteupCard entry={e} caseNo={numbers.get(slugOf(e)) ?? 0} />
+            ))}
+          </div>
+        </div>
+      </section>
+    )
+  }
 </Base>
 
 <script>
@@ -121,11 +131,6 @@ const t = useTranslations(lang);
     gap: var(--hairline);
     background: var(--line);
     border: var(--hairline) solid var(--line);
-  }
-
-  @media (min-width: 820px) {
-    .cases {
-      grid-template-columns: repeat(3, 1fr);
-    }
+    grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr));
   }
 </style>

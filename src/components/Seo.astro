@@ -1,0 +1,36 @@
+---
+import { getRelativeLocaleUrl } from 'astro:i18n';
+import type { Language } from '../i18n/ui';
+
+interface Props {
+  lang: Language;
+  /** Locale-independent path (plan/02 §2.2) — the same slug in both languages. */
+  path: string;
+  /**
+   * Override the alternate set. Omit for pages that exist in both locales.
+   * Pass an explicit map (possibly empty) for writeups without a translation,
+   * so hreflang never points at a page that does not exist.
+   */
+  alternates?: Partial<Record<Language, string>>;
+  robots?: 'index' | 'noindex';
+}
+
+const { lang, path } = Astro.props;
+const alternates = Astro.props.alternates;
+const robots = Astro.props.robots ?? 'index';
+const site = Astro.site!;
+
+const canonical = new URL(getRelativeLocaleUrl(lang, path), site);
+const otherLangs = alternates
+  ? (Object.keys(alternates) as Language[])
+  : (['en', 'ar'] as Language[]);
+const defaultHref = new URL(getRelativeLocaleUrl('en', alternates?.en ?? path), site);
+
+const urlFor = (l: Language): string =>
+  new URL(getRelativeLocaleUrl(l, alternates?.[l] ?? path), site).href;
+---
+
+<link rel="canonical" href={canonical.href} />
+{otherLangs.map((l) => <link rel="alternate" hreflang={l} href={urlFor(l)} />)}
+<link rel="alternate" hreflang="x-default" href={defaultHref.href} />
+{robots === 'noindex' && <meta name="robots" content="noindex,follow" />}

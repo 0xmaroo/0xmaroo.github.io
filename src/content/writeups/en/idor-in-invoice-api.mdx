@@ -1,0 +1,47 @@
+---
+title: "I attacked the gym system I built. Here's what I found."
+summary: "An IDOR in my own gym management platform: a numeric invoice id, no ownership check, and the shape of the fix once the root cause was actually in front of me."
+lang: "en"
+publishedAt: 2026-07-14
+category: "web"
+tags: ["idor", "authorization", "laravel"]
+target: "GymOS v1.2 — self-built"
+targetType: "own-system"
+cwe: ["CWE-639"]
+owasp: ["A01:2021"]
+severity: "high"
+status: "patched"
+hasFix: true
+toolsUsed: ["Burp Suite", "Postman"]
+visibility:
+  draft: false
+  featured: true
+---
+
+## 01 — The target
+
+TODO(copy): what GymOS is, how it's deployed, and why I wrote this one down.
+
+## 02 — Recon
+
+TODO(copy): how the invoice endpoint surfaced during a routine pass.
+
+## 03 — The bug
+
+TODO(copy): the missing ownership check, with the request that proved it.
+
+## 04 — Exploitation
+
+TODO(copy): request/response pair or Payload component
+
+## 05 — Dead ends
+
+TODO(copy): what I tried that did not work
+
+## 06 — The fix
+
+TODO(copy): the actual code-level fix
+
+## 07 — What it teaches
+
+TODO(copy): the generalizable lesson.

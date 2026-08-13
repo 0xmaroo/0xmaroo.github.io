@@ -1,0 +1,354 @@
+---
+import Base from './Base.astro';
+import Seo from '../components/Seo.astro';
+import Stamp from '../components/writeup/Stamp.astro';
+import Callout from '../components/writeup/Callout.astro';
+import Payload from '../components/writeup/Payload.astro';
+import FixDiff from '../components/writeup/FixDiff.astro';
+import DeadEnd from '../components/writeup/DeadEnd.astro';
+import Terminal from '../components/writeup/Terminal.astro';
+import { getRelativeLocaleUrl } from 'astro:i18n';
+import { render } from 'astro:content';
+import type { MarkdownHeading } from 'astro';
+import { useTranslations } from '../i18n/utils';
+import { slugOf, type Writeup } from '../lib/content';
+import { readingTimeOf } from '../lib/reading-time';
+import type { Language, UIKey } from '../i18n/ui';
+import '../styles/prose.css';
+
+interface Props {
+  entry: Writeup;
+  /** Counterpart entry in the other language, when one exists. */
+  translation?: Writeup;
+}
+
+const { entry, translation } = Astro.props;
+const data = entry.data;
+const lang: Language = data.lang;
+const t = useTranslations(lang);
+const other: Language = lang === 'en' ? 'ar' : 'en';
+const slug = slugOf(entry);
+const path = `/writeups/${slug}`;
+const { Content, headings } = await render(entry);
+
+const minutes = data.readingTime ?? readingTimeOf(entry.body ?? '', lang);
+const dateFmt = new Intl.DateTimeFormat(lang === 'ar' ? 'ar' : 'en-US', {
+  year: 'numeric',
+  month: 'short',
+  day: 'numeric',
+  numberingSystem: 'latn',
+});
+const publishedLabel = t('writeup.published').replace('{0}', dateFmt.format(data.publishedAt));
+const updatedLabel =
+  data.updatedAt && t('writeup.updated').replace('{0}', dateFmt.format(data.updatedAt));
+
+const isUnlisted = data.visibility.unlisted;
+const hideFromSearch = data.visibility.hideFrom.includes('search');
+const noindex = data.visibility.noindex || isUnlisted;
+const pagefindIgnore = isUnlisted || hideFromSearch;
+const alternates = translation ? { [other]: path } : {};
+
+const toc: MarkdownHeading[] = headings.filter((h) => h.depth === 2);
+
+const severityVariant = {
+  critical: 'crit',
+  high: 'high',
+  medium: 'med',
+  low: 'low',
+  info: 'info',
+} as const;
+const statusVariant = {
+  patched: 'ok',
+  'lab-only': 'blue',
+  disclosed: 'high',
+  wip: 'med',
+} as const;
+
+const mdxComponents = { Callout, Payload, FixDiff, DeadEnd, Terminal };
+
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'TechArticle',
+  headline: data.title,
+  description: data.summary,
+  inLanguage: lang,
+  datePublished: data.publishedAt.toISOString(),
+  dateModified: (data.updatedAt ?? data.publishedAt).toISOString(),
+  author: { '@type': 'Person', name: '0xMARO' },
+  about: data.cwe.map((c) => ({ '@type': 'Thing', name: c })),
+  keywords: data.tags.join(', '),
+  mainEntityOfPage: new URL(getRelativeLocaleUrl(lang, path), Astro.site!).href,
+};
+---
+
+<Base lang={lang} title={`${data.title} — 0xMARO`} description={data.summary}>
+  <Seo slot="head" lang={lang} path={path} alternates={alternates} robots={noindex ? 'noindex' : 'index'} />
+  <script slot="head" type="application/ld+json" set:html={JSON.stringify(jsonLd)} is:inline />
+
+  <article class="writeup">
+    <header class="wrap writeup__head">
+      <p class="writeup__eyebrow ltr">{data.category.toUpperCase()} · {slug}</p>
+      <h1 class="writeup__title">{data.title}</h1>
+      <p class="writeup__summary">{data.summary}</p>
+
+      <div class="writeup__meta">
+        <div class="writeup__stamps">
+          {data.severity && (
+            <Stamp variant={severityVariant[data.severity]} label={t(`severity.${data.severity}` as UIKey)} />
+          )}
+          <Stamp variant={statusVariant[data.status]} label={t(`status.${data.status}` as UIKey)} />
+        </div>
+
+        <dl class="writeup__facts">
+          <div class="fact">
+            <dt>{t('writeup.target')}</dt>
+            <dd class="ltr">{data.target}</dd>
+          </div>
+          <div class="fact">
+            <dt>{t('writeup.targetType')}</dt>
+            <dd class="ltr">{data.targetType}</dd>
+          </div>
+          {data.cwe.length > 0 && (
+            <div class="fact">
+              <dt>CWE</dt>
+              <dd class="ltr">{data.cwe.join(', ')}</dd>
+            </div>
+          )}
+          {data.owasp.length > 0 && (
+            <div class="fact">
+              <dt>OWASP</dt>
+              <dd class="ltr">{data.owasp.join(' · ')}</dd>
+            </div>
+          )}
+          {data.toolsUsed.length > 0 && (
+            <div class="fact">
+              <dt>{t('writeup.tools')}</dt>
+              <dd class="ltr">{data.toolsUsed.join(', ')}</dd>
+            </div>
+          )}
+          {data.tags.length > 0 && (
+            <div class="fact">
+              <dt>{t('writeup.tags')}</dt>
+              <dd class="ltr">{data.tags.join(', ')}</dd>
+            </div>
+          )}
+        </dl>
+
+        <div class="writeup__dates">
+          <span class="ltr">{t('writeup.read').replace('{0}', String(minutes))}</span>
+          <span class="ltr" aria-hidden="true">·</span>
+          <span class="ltr">{publishedLabel}</span>
+          {updatedLabel && <span class="ltr">· {updatedLabel}</span>}
+        </div>
+      </div>
+    </header>
+
+    <div class="wrap writeup__grid">
+      {
+        toc.length > 0 && (
+          <aside class="writeup__toc" aria-label={t('writeup.toc')}>
+            <p class="writeup__toc-label u-label ltr">{t('writeup.toc')}</p>
+            <ol class="writeup__toc-list">
+              {toc.map((h) => (
+                <li>
+                  <a href={`#${h.slug}`}>{h.text}</a>
+                </li>
+              ))}
+            </ol>
+          </aside>
+        )
+      }
+
+      <div class="writeup__content prose" data-pagefind-body={pagefindIgnore ? undefined : ''}>
+        <Content components={mdxComponents} />
+      </div>
+    </div>
+
+    <footer class="wrap writeup__foot">
+      {
+        translation && (
+          <a class="writeup__translate" href={getRelativeLocaleUrl(other, path)}>
+            {lang === 'en' ? t('writeup.readInAr') : t('writeup.readInEn')}
+          </a>
+        )
+      }
+      <a class="writeup__back" href={getRelativeLocaleUrl(lang, '/writeups')}>
+        {t('writeup.backToArchive')}
+      </a>
+    </footer>
+  </article>
+</Base>
+
+<style>
+  .writeup__head {
+    padding-block-start: var(--space-7);
+    border-block-end: var(--hairline) solid var(--line);
+    padding-block-end: var(--space-6);
+  }
+
+  .writeup__eyebrow {
+    font-family: var(--f-code);
+    font-size: var(--text-xs);
+    color: var(--blue-400);
+    letter-spacing: var(--ls-meta);
+    margin-block-end: var(--space-4);
+  }
+
+  .writeup__title {
+    max-width: var(--measure-read);
+  }
+
+  .writeup__summary {
+    margin-block-start: var(--space-5);
+    max-width: var(--measure-lead);
+    font-size: var(--step-1);
+    color: var(--text-lo);
+    line-height: var(--lh-lead);
+  }
+
+  .writeup__meta {
+    margin-block-start: var(--space-6);
+  }
+
+  .writeup__stamps {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+  }
+
+  .writeup__facts {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-3) var(--space-5);
+    margin-block-start: var(--space-5);
+    margin-block-end: 0;
+  }
+
+  @media (min-width: 640px) {
+    .writeup__facts {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+
+  .fact {
+    margin: 0;
+  }
+
+  .fact dt {
+    font-family: var(--f-cond);
+    font-size: var(--text-xs);
+    text-transform: uppercase;
+    letter-spacing: var(--ls-label);
+    color: var(--blue-400);
+  }
+
+  .fact dd {
+    margin: var(--space-1) 0 0;
+    font-size: var(--step--1);
+    color: var(--text);
+  }
+
+  .writeup__dates {
+    margin-block-start: var(--space-5);
+    font-family: var(--f-code);
+    font-size: var(--text-xs);
+    color: var(--text-dim);
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+
+  /* ── Grid: content + sticky TOC in the rail margin (plan/03 §3.3) ── */
+  .writeup__grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-6);
+    padding-block-start: var(--space-7);
+    padding-block-end: var(--space-8);
+  }
+
+  @media (min-width: 1080px) {
+    .writeup__grid {
+      grid-template-columns: minmax(0, 7fr) minmax(0, 3fr);
+      gap: var(--space-8);
+    }
+
+    .writeup__content {
+      order: 1;
+    }
+
+    .writeup__toc {
+      order: 2;
+    }
+  }
+
+  .writeup__toc {
+    position: sticky;
+    top: calc(var(--space-5) + 56px);
+    align-self: start;
+    border-inline-start: var(--hairline) solid var(--line);
+    padding-inline-start: var(--space-4);
+  }
+
+  .writeup__toc-label {
+    margin-block-end: var(--space-3);
+  }
+
+  .writeup__toc-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  .writeup__toc-list a {
+    display: inline-block;
+    min-height: var(--touch-min);
+    line-height: var(--touch-min);
+    font-size: var(--step--1);
+    color: var(--text-lo);
+    text-decoration: none;
+    border-block-end: var(--hairline) solid transparent;
+    transition:
+      color var(--t-fast) ease,
+      border-color var(--t-fast) ease;
+  }
+
+  .writeup__toc-list a:hover {
+    color: var(--sulfur-300);
+    border-block-end-color: var(--sulfur-400);
+  }
+
+  .writeup__foot {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-4) var(--space-6);
+    padding-block: var(--space-6);
+    border-block-start: var(--hairline) solid var(--line);
+    font-family: var(--f-cond);
+    font-size: var(--text-sm);
+    text-transform: uppercase;
+    letter-spacing: var(--ls-label);
+  }
+
+  .writeup__foot a {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--touch-min);
+    color: var(--text-lo);
+    text-decoration: none;
+    border-block-end: var(--hairline) solid transparent;
+  }
+
+  .writeup__foot a:hover {
+    color: var(--sulfur-300);
+    border-block-end-color: var(--sulfur-400);
+  }
+
+  .writeup__back {
+    margin-inline-start: auto;
+  }
+</style>

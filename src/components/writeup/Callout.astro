@@ -1,0 +1,82 @@
+---
+import { useTranslations } from '../../i18n/utils';
+import type { Language, UIKey } from '../../i18n/ui';
+
+interface Props {
+  type?: 'note' | 'warn' | 'legal';
+}
+
+const { type = 'note' } = Astro.props;
+const lang = (Astro.currentLocale ?? 'en') as Language;
+const t = useTranslations(lang);
+const label = t(`callout.${type}` as UIKey);
+---
+
+<aside class:list={[`callout callout--${type}`]} role="note">
+  <p class="callout__label u-label ltr">{label}</p>
+  <div class="callout__body prose">
+    <slot />
+  </div>
+</aside>
+
+<style>
+  .callout {
+    margin-block: var(--space-6);
+    padding: var(--space-4) var(--space-5);
+    background: var(--ink-800);
+    border: var(--hairline) solid var(--line);
+    border-radius: var(--radius);
+  }
+
+  .callout__label {
+    margin-block-end: var(--space-3);
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+
+  .callout__label::before {
+    content: '';
+    width: var(--rule-thickness);
+    height: 1em;
+    background: currentColor;
+  }
+
+  .callout__body > :first-child {
+    margin-block-start: 0;
+  }
+
+  .callout__body > :last-child {
+    margin-block-end: 0;
+  }
+
+  .callout--note {
+    border-inline-start: var(--rule-thickness) solid var(--blue-500);
+  }
+
+  .callout--note .callout__label {
+    color: var(--blue-400);
+  }
+
+  .callout--warn {
+    border-inline-start: var(--rule-thickness) solid var(--sulfur-400);
+    background: color-mix(in srgb, var(--sulfur-900) 55%, var(--ink-800));
+  }
+
+  .callout--warn .callout__label {
+    color: var(--sulfur-400);
+  }
+
+  .callout--legal {
+    border-inline-start: var(--rule-thickness) dashed var(--text-dim);
+    background: var(--ink-900);
+  }
+
+  .callout--legal .callout__label {
+    color: var(--text-lo);
+  }
+
+  .callout--legal .callout__body {
+    color: var(--text-lo);
+  }
+</style>

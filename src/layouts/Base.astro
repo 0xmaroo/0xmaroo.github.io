@@ -33,6 +33,7 @@ const bodyFont =
     <link rel="icon" href="/favicon.ico" />
     <link rel="preload" href={bodyFont} as="font" type="font/woff2" crossorigin="anonymous" />
     <script src="/js/root.js" is:inline></script>
+    <slot name="head" />
   </head>
   <body>
     <a class="skip" href="#main">{t('skip')}</a>

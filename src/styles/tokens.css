@@ -10,8 +10,8 @@
   /* ── Text (plan §3.1) ── */
   --text-hi: #e8ebf0;
   --text: #b6bdca;
-  --text-lo: #6f7a8c;
-  --text-dim: #4a5364;
+  --text-lo: #8f9aac;
+  --text-dim: #737c8d;
 
   /* ── Blueprint (البناء) (plan §3.1) ── */
   --blue-400: #7fa6ff;
@@ -25,7 +25,7 @@
   --sulfur-900: #211c08;
 
   /* ── Stamp — severity فقط (plan §3.1) ── */
-  --stamp-crit: #c6453c;
+  --stamp-crit: #db4832;
   --stamp-high: #c2683a;
   --stamp-med: #a08a3c;
   --stamp-low: #4e7cf6;
