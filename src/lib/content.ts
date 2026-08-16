@@ -11,24 +11,20 @@ import type { CollectionEntry } from 'astro:content';
  */
 
 export type Writeup = CollectionEntry<'writeups'>;
+export type Project = CollectionEntry<'projects'>;
 
 /**
  * A surface is a place a post can appear. `direct` is the viewing context of
  * the post's own page (a direct link), which bypasses `unlisted`.
  */
-export type Surface =
-  | 'home'
-  | 'archive'
-  | 'rss'
-  | 'search'
-  | 'sitemap'
-  | 'related'
-  | 'direct';
+export type Surface = 'home' | 'archive' | 'rss' | 'search' | 'sitemap' | 'related' | 'direct';
 
-export const isPublic = (entry: Writeup): boolean => !entry.data.visibility.draft;
+type VisibilityCarrier = { data: { visibility: { draft: boolean } } };
+
+export const isPublic = (entry: VisibilityCarrier): boolean => !entry.data.visibility.draft;
 
 /** Drafts are not built into the production output at all (plan/02 §2.4). */
-export const buildsInProd = (entry: Writeup): boolean =>
+export const buildsInProd = (entry: VisibilityCarrier): boolean =>
   !(import.meta.env.PROD && entry.data.visibility.draft);
 
 export const forSurface = (
@@ -88,10 +84,57 @@ export const caseNumbers = (entries: Writeup[]): Map<string, number> => {
  * Wrapped in forSurface('home') so drafts, unlisted and hideFrom:['home'] never
  * leak in. If nothing is featured the caller renders no section at all.
  */
-export const featuredOnHome = (
-  entries: Writeup[],
-  lang: Writeup['data']['lang']
-): Writeup[] =>
+export const featuredOnHome = (entries: Writeup[], lang: Writeup['data']['lang']): Writeup[] =>
   forSurface(entries, 'home', lang)
     .filter((e) => e.data.visibility.featured)
     .slice(0, 3);
+
+/**
+ * Projects follow the same visibility rules as writeups (plan/02 §2.4).
+ * `surface === 'direct'` bypasses `unlisted`; anything else is a listing
+ * surface. Projects never enter RSS, so `rss`/`home`/`search` are handled by
+ * the same hideFrom enum.
+ */
+export const projectSurface = (entries: Project[], lang: Project['data']['lang']): Project[] =>
+  entries
+    .filter((e) => !e.data.visibility.draft)
+    .filter((e) => e.data.lang === lang)
+    .filter((e) => !e.data.visibility.unlisted)
+    .filter((e) => !e.data.visibility.hideFrom.includes('archive'))
+    .sort((a, b) => b.data.publishedAt.getTime() - a.data.publishedAt.getTime());
+
+/** Same on-disk slug convention as writeups: `en/gymos.mdx` → `gymos`. */
+export const projectSlugOf = (entry: Project): string =>
+  entry.id.replace(/\.mdx?$/, '').replace(/^[a-z]{2}\//, '');
+
+/** The counterpart project in the other language (same slug by convention). */
+export const getProjectTranslation = (entries: Project[], entry: Project): Project | undefined => {
+  const other: Project['data']['lang'] = entry.data.lang === 'en' ? 'ar' : 'en';
+  const sameSlug = entries.find(
+    (e) => e.data.lang === other && projectSlugOf(e) === projectSlugOf(entry)
+  );
+  if (sameSlug) return sameSlug;
+  if (entry.data.translationOf) {
+    return entries.find(
+      (e) => e.data.lang === other && projectSlugOf(e) === entry.data.translationOf
+    );
+  }
+  return undefined;
+};
+
+/**
+ * Resolve a project's `relatedWriteups` slugs to entries that actually exist
+ * and build in production, preferring the current locale and falling back to
+ * the English version. Used to build internal links that never 404.
+ */
+export const relatedWriteupEntries = (
+  entries: Writeup[],
+  slugs: string[],
+  lang: Writeup['data']['lang']
+): Writeup[] =>
+  slugs
+    .map((slug) => {
+      const local = entries.find((e) => e.data.lang === lang && slugOf(e) === slug);
+      return local ?? entries.find((e) => e.data.lang === 'en' && slugOf(e) === slug);
+    })
+    .filter((e): e is Writeup => Boolean(e && buildsInProd(e)));

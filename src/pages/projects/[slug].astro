@@ -1,0 +1,31 @@
+---
+import Project from '../../layouts/Project.astro';
+import { getCollection } from 'astro:content';
+import {
+  buildsInProd,
+  getProjectTranslation,
+  projectSlugOf,
+  relatedWriteupEntries,
+} from '../../lib/content';
+import { registerSitemapExclusions } from '../../lib/sitemap-exclude';
+
+export async function getStaticPaths() {
+  const entries = await getCollection('projects');
+  const writeups = await getCollection('writeups');
+  await registerSitemapExclusions();
+  return entries
+    .filter((e) => e.data.lang === 'en' && buildsInProd(e))
+    .map((entry) => ({
+      params: { slug: projectSlugOf(entry) },
+      props: {
+        entry,
+        translation: getProjectTranslation(entries, entry),
+        relatedWriteups: relatedWriteupEntries(writeups, entry.data.relatedWriteups, 'en'),
+      },
+    }));
+}
+
+const { entry, translation, relatedWriteups } = Astro.props;
+---
+
+<Project entry={entry} translation={translation} relatedWriteups={relatedWriteups} />

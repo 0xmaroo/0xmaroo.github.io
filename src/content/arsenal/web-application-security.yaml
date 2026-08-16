@@ -1,0 +1,6 @@
+domain:
+  en: 'Web Application Security'
+  ar: 'أمن تطبيقات الويب'
+rows:
+  - tools: ['Burp Suite', 'Postman']
+    usedOn: '/writeups/idor-in-invoice-api'

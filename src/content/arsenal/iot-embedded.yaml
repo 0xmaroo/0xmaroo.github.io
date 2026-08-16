@@ -1,0 +1,6 @@
+domain:
+  en: 'IoT / Embedded'
+  ar: 'إنترنت الأشياء والمدمجة'
+rows:
+  - tools: ['ESP32']
+    usedOn: '/projects/dprims'

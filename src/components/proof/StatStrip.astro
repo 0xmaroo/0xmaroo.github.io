@@ -1,6 +1,7 @@
 ---
 import { useTranslations } from '../../i18n/utils';
 import { proofItems } from '../../data/proof';
+import { isRealProof } from '../../lib/proof';
 import type { Language, UIKey } from '../../i18n/ui';
 
 interface Props {
@@ -10,8 +11,15 @@ interface Props {
 const { lang } = Astro.props;
 const t = useTranslations(lang);
 
-// F-11: a figure without a proof URL is never rendered.
-const items = proofItems.filter((item) => item.href.length > 0);
+// F-11: a figure without a real proof URL is never rendered. The pending list
+// is surfaced to the owner at build time, not to visitors.
+const items = proofItems.filter((item) => isRealProof(item.href));
+const pending = proofItems.filter((item) => !isRealProof(item.href));
+for (const p of pending) {
+  console.warn(
+    `[proof] StatStrip "${p.value}" held back — no real proof URL (see src/data/proof.ts).`
+  );
+}
 ---
 
 {

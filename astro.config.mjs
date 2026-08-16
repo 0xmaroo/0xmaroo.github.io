@@ -3,6 +3,7 @@ import { defineConfig } from 'astro/config';
 import mdx from '@astrojs/mdx';
 import sitemap from '@astrojs/sitemap';
 import { isSitemapExcluded } from './src/lib/sitemap-exclude';
+import { generateDefaultOgImages } from './src/lib/og';
 
 export default defineConfig({
   // GitHub Pages (user page → base stays '/'). This `site` line is the ONLY
@@ -28,5 +29,15 @@ export default defineConfig({
     sitemap({
       filter: (page) => !isSitemapExcluded(page),
     }),
+    {
+      // Phase 3: default per-locale OG images into public/og/ before the
+      // static copy, so the built HTML can reference them.
+      name: 'og-images',
+      hooks: {
+        'astro:build:start': async () => {
+          await generateDefaultOgImages();
+        },
+      },
+    },
   ],
 });

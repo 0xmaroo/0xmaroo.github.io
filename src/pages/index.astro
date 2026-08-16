@@ -1,5 +1,6 @@
 ---
 import Base from '../layouts/Base.astro';
+import Seo from '../components/Seo.astro';
 import Rail from '../components/Rail.astro';
 import DiffHero from '../components/hero/DiffHero.astro';
 import StatStrip from '../components/proof/StatStrip.astro';
@@ -17,6 +18,13 @@ const numbers = caseNumbers(entries);
 ---
 
 <Base lang={lang} title="0xMARO — Blueprint & Breach" description={siteDescription[lang]}>
+  <Seo
+    slot="head"
+    lang={lang}
+    path="/"
+    title="0xMARO — Blueprint & Breach"
+    description={siteDescription[lang]}
+  />
   <Rail />
   <div class="wrap hero">
     <p class="hero__file ltr">{t('hero.file')}</p>
@@ -34,7 +42,9 @@ const numbers = caseNumbers(entries);
         <div class="wrap">
           <div class="sec__head reveal">
             <span class="sec__num ltr">{t('sec.cases.num')}</span>
-            <h2 id="cases-title" class="sec__title">{t('sec.cases.title')}</h2>
+            <h2 id="cases-title" class="sec__title">
+              {t('sec.cases.title')}
+            </h2>
             <p class="sec__note">{t('sec.cases.note')}</p>
           </div>
 

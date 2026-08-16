@@ -1,0 +1,6 @@
+domain:
+  en: 'Digital Forensics & DFIR'
+  ar: 'التحقيق الجنائي الرقمي'
+rows:
+  - tools: ['Splunk']
+    usedOn: ''

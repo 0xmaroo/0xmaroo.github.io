@@ -1,0 +1,398 @@
+---
+import Base from './Base.astro';
+import Seo from '../components/Seo.astro';
+import Stamp from '../components/writeup/Stamp.astro';
+import Callout from '../components/writeup/Callout.astro';
+import { getRelativeLocaleUrl } from 'astro:i18n';
+import { render } from 'astro:content';
+import { useTranslations } from '../i18n/utils';
+import { projectSlugOf, slugOf, type Project, type Writeup } from '../lib/content';
+import { isTodo, surfaceProjectMetrics } from '../lib/proof';
+import type { Language, UIKey } from '../i18n/ui';
+import '../styles/prose.css';
+
+interface Props {
+  entry: Project;
+  /** Counterpart project in the other language, when one exists. */
+  translation?: Project;
+  /** Related writeups already resolved to entries that build in production. */
+  relatedWriteups: Writeup[];
+}
+
+const { entry, translation, relatedWriteups } = Astro.props;
+const data = entry.data;
+const lang: Language = data.lang;
+const t = useTranslations(lang);
+const other: Language = lang === 'en' ? 'ar' : 'en';
+const slug = projectSlugOf(entry);
+const path = `/projects/${slug}`;
+const { Content } = await render(entry);
+
+const statusVariant = { live: 'ok', archived: 'med', private: 'blue' } as const;
+
+// F-11: only metrics carrying a real http(s) proof URL are rendered.
+const { shown: metrics, suppressed } = surfaceProjectMetrics(data.metrics);
+for (const s of suppressed) {
+  console.warn(`[proof] project "${slug}" metric "${s.claim}" held back — no real proof URL.`);
+}
+
+// Scaffolding placeholders are real data but never content.
+const summary = isTodo(data.summary) ? null : data.summary;
+const role = isTodo(data.role) ? null : data.role;
+const securityNotes = isTodo(data.securityNotes) ? null : data.securityNotes;
+const description = summary ?? t('projects.desc');
+
+const noindex = data.visibility.noindex || data.visibility.unlisted;
+const alternates = translation ? { [other]: path } : {};
+
+const mdxComponents = { Callout };
+
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'CreativeWork',
+  headline: data.title,
+  description: data.summary,
+  inLanguage: lang,
+  datePublished: data.publishedAt.toISOString(),
+  dateModified: (data.updatedAt ?? data.publishedAt).toISOString(),
+  author: { '@type': 'Person', name: '0xMARO' },
+  mainEntityOfPage: new URL(getRelativeLocaleUrl(lang, path), Astro.site!).href,
+};
+---
+
+<Base lang={lang} title={`${data.title} — 0xMARO`} description={description}>
+  <Seo
+    slot="head"
+    lang={lang}
+    path={path}
+    alternates={alternates}
+    robots={noindex ? 'noindex' : 'index'}
+    title={`${data.title} — 0xMARO`}
+    description={description}
+  />
+  <script slot="head" type="application/ld+json" set:html={JSON.stringify(jsonLd)} is:inline />
+
+  <article class="project">
+    <header class="wrap project__head">
+      <p class="project__eyebrow ltr">{t('projects.eyebrow')} · {slug}</p>
+      <h1 class="project__title">{data.title}</h1>
+      {summary && <p class="project__summary">{summary}</p>}
+
+      <div class="project__meta">
+        <div class="project__stamps">
+          <Stamp variant={statusVariant[data.status]} label={t(`status.${data.status}` as UIKey)} />
+        </div>
+
+        <dl class="project__facts">
+          {
+            role && (
+              <div class="fact">
+                <dt>{t('project.role')}</dt>
+                <dd>{role}</dd>
+              </div>
+            )
+          }
+          {
+            data.stack.length > 0 && (
+              <div class="fact">
+                <dt>{t('project.stack')}</dt>
+                <dd class="ltr">{data.stack.join(', ')}</dd>
+              </div>
+            )
+          }
+          {
+            data.repo && (
+              <div class="fact">
+                <dt>{t('project.repo')}</dt>
+                <dd class="ltr">
+                  <a href={data.repo} rel="nofollow noreferrer">
+                    {data.repo}
+                  </a>
+                </dd>
+              </div>
+            )
+          }
+          {
+            data.demo && (
+              <div class="fact">
+                <dt>{t('project.demo')}</dt>
+                <dd class="ltr">
+                  <a href={data.demo} rel="nofollow noreferrer">
+                    {data.demo}
+                  </a>
+                </dd>
+              </div>
+            )
+          }
+        </dl>
+      </div>
+    </header>
+
+    {
+      metrics.length > 0 && (
+        <div class="wrap project__metrics" aria-label={t('project.metrics')}>
+          {metrics.map((m) => (
+            <a class="metric" href={m.proof} rel="nofollow noreferrer">
+              <span class="metric__value ltr">{m.value}</span>
+              <span class="metric__label">{m.label}</span>
+              <span class="metric__verify ltr">{t('proof.verify')}</span>
+            </a>
+          ))}
+        </div>
+      )
+    }
+
+    <div class="wrap project__grid">
+      <div class="project__content prose" data-pagefind-body>
+        <Content components={mdxComponents} />
+      </div>
+    </div>
+
+    {
+      securityNotes && (
+        <div class="wrap project__notes">
+          <h2>{t('project.securityNotes')}</h2>
+          <p>{securityNotes}</p>
+        </div>
+      )
+    }
+
+    {
+      relatedWriteups.length > 0 && (
+        <div class="wrap project__related">
+          <h2>{t('project.related')}</h2>
+          <ul class="project__related-list">
+            {relatedWriteups.map((w) => (
+              <li>
+                <a href={getRelativeLocaleUrl(lang, `/writeups/${slugOf(w)}`)}>{w.data.title}</a>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )
+    }
+
+    <footer class="wrap project__foot">
+      {
+        translation && (
+          <a class="project__translate" href={getRelativeLocaleUrl(other, path)}>
+            {lang === 'en' ? t('project.readInAr') : t('project.readInEn')}
+          </a>
+        )
+      }
+      <a class="project__back" href={getRelativeLocaleUrl(lang, '/projects')}>
+        {t('project.backToProjects')}
+      </a>
+    </footer>
+  </article>
+</Base>
+
+<style>
+  .project__head {
+    padding-block-start: var(--space-7);
+    border-block-end: var(--hairline) solid var(--line);
+    padding-block-end: var(--space-6);
+  }
+
+  .project__eyebrow {
+    font-family: var(--f-code);
+    font-size: var(--text-xs);
+    color: var(--blue-400);
+    letter-spacing: var(--ls-meta);
+    margin-block-end: var(--space-4);
+  }
+
+  .project__title {
+    max-width: var(--measure-read);
+  }
+
+  .project__summary {
+    margin-block-start: var(--space-5);
+    max-width: var(--measure-lead);
+    font-size: var(--step-1);
+    color: var(--text-lo);
+    line-height: var(--lh-lead);
+  }
+
+  .project__meta {
+    margin-block-start: var(--space-6);
+  }
+
+  .project__stamps {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+  }
+
+  .project__facts {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-3) var(--space-5);
+    margin-block-start: var(--space-5);
+    margin-block-end: 0;
+  }
+
+  @media (min-width: 640px) {
+    .project__facts {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+
+  .fact {
+    margin: 0;
+  }
+
+  .fact dt {
+    font-family: var(--f-cond);
+    font-size: var(--text-xs);
+    text-transform: uppercase;
+    letter-spacing: var(--ls-label);
+    color: var(--blue-400);
+  }
+
+  .fact dd {
+    margin: var(--space-1) 0 0;
+    font-size: var(--step--1);
+    color: var(--text);
+  }
+
+  .fact dd a {
+    color: var(--sulfur-300);
+    text-decoration: none;
+    border-block-end: var(--hairline) solid var(--sulfur-400);
+    word-break: break-all;
+  }
+
+  .fact dd a:hover {
+    color: var(--sulfur-400);
+  }
+
+  /* ── Metrics: proof-gated figures, same visual language as StatStrip ── */
+  .project__metrics {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--hairline);
+    background: var(--line);
+    border: var(--hairline) solid var(--line);
+    margin-block-start: var(--space-6);
+  }
+
+  @media (min-width: 640px) {
+    .project__metrics {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+
+  .metric {
+    background: var(--ink-900);
+    padding: var(--space-4) var(--space-5);
+    text-decoration: none;
+    display: block;
+    transition: background var(--t-fast) ease;
+  }
+
+  .metric:hover {
+    background: var(--ink-800);
+  }
+
+  .metric__value {
+    font-family: var(--f-code);
+    font-size: var(--step-1);
+    color: var(--text-hi);
+    font-weight: 600;
+    display: block;
+  }
+
+  .metric__label {
+    display: block;
+    margin-block-start: var(--space-1);
+    font-size: var(--step--1);
+    color: var(--text-lo);
+  }
+
+  .metric__verify {
+    display: block;
+    margin-block-start: var(--space-2);
+    font-family: var(--f-code);
+    font-size: var(--text-2xs);
+    color: var(--blue-400);
+  }
+
+  .project__grid {
+    padding-block-start: var(--space-7);
+    padding-block-end: var(--space-8);
+  }
+
+  .project__notes,
+  .project__related {
+    padding-block: var(--space-6);
+    border-block-start: var(--hairline) solid var(--line);
+  }
+
+  .project__notes h2,
+  .project__related h2 {
+    font-size: var(--step-0);
+    margin-block-end: var(--space-4);
+  }
+
+  .project__notes p {
+    max-width: var(--measure-lead);
+    color: var(--text-lo);
+    line-height: var(--lh-body);
+    margin: 0;
+  }
+
+  .project__related-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  .project__related-list a {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--touch-min);
+    color: var(--text-lo);
+    text-decoration: none;
+    border-block-end: var(--hairline) solid transparent;
+  }
+
+  .project__related-list a:hover {
+    color: var(--sulfur-300);
+    border-block-end-color: var(--sulfur-400);
+  }
+
+  .project__foot {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-4) var(--space-6);
+    padding-block: var(--space-6);
+    border-block-start: var(--hairline) solid var(--line);
+    font-family: var(--f-cond);
+    font-size: var(--text-sm);
+    text-transform: uppercase;
+    letter-spacing: var(--ls-label);
+  }
+
+  .project__foot a {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--touch-min);
+    color: var(--text-lo);
+    text-decoration: none;
+    border-block-end: var(--hairline) solid transparent;
+  }
+
+  .project__foot a:hover {
+    color: var(--sulfur-300);
+    border-block-end-color: var(--sulfur-400);
+  }
+
+  .project__back {
+    margin-inline-start: auto;
+  }
+</style>

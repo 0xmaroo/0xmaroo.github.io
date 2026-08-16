@@ -1,0 +1,82 @@
+---
+import { getRelativeLocaleUrl } from 'astro:i18n';
+import Stamp from '../writeup/Stamp.astro';
+import { useTranslations } from '../../i18n/utils';
+import { projectSlugOf, type Project } from '../../lib/content';
+import type { UIKey } from '../../i18n/ui';
+
+interface Props {
+  entry: Project;
+  /** Position in the list, rendered as a two-digit index. */
+  index: number;
+}
+
+const { entry, index } = Astro.props;
+const data = entry.data;
+const lang = data.lang;
+const t = useTranslations(lang);
+const slug = projectSlugOf(entry);
+const statusVariant = { live: 'ok', archived: 'med', private: 'blue' } as const;
+const href = getRelativeLocaleUrl(lang, `/projects/${slug}`);
+const id = String(index + 1).padStart(2, '0');
+---
+
+<a class="project" href={href}>
+  <div class="project__top">
+    <span class="project__id ltr">{id}</span>
+    <Stamp variant={statusVariant[data.status]} label={t(`status.${data.status}` as UIKey)} />
+  </div>
+  <h2 class="project__title">{data.title}</h2>
+  {data.stack.length > 0 && <div class="project__stack ltr">{data.stack.join(' · ')}</div>}
+</a>
+
+<style>
+  .project {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    padding: var(--space-5);
+    background: var(--ink-900);
+    text-decoration: none;
+    transition: background var(--t-fast) ease;
+  }
+
+  .project:hover {
+    background: var(--ink-800);
+  }
+
+  .project__top {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+
+  .project__id {
+    font-family: var(--f-code);
+    font-size: var(--text-xs);
+    color: var(--blue-400);
+    letter-spacing: var(--ls-meta);
+  }
+
+  .project__title {
+    margin: 0;
+    font-size: var(--step-0);
+    font-weight: 600;
+    font-family: var(--f-display);
+    letter-spacing: var(--ls-display);
+    color: var(--text-hi);
+    line-height: var(--lh-body);
+    transition: color var(--t-fast) ease;
+  }
+
+  .project:hover .project__title {
+    color: var(--sulfur-300);
+  }
+
+  .project__stack {
+    margin-block-start: auto;
+    font-family: var(--f-code);
+    font-size: var(--text-xs);
+    color: var(--text-dim);
+  }
+</style>
