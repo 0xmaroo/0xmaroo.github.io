@@ -14,13 +14,21 @@ const numbers = caseNumbers(entries);
 ---
 
 <Base lang={lang} title={`${t('writeups.title')} — 0xMARO`} description={t('writeups.desc')}>
-  <Seo slot="head" lang={lang} path="/writeups" />
+  <Seo
+    slot="head"
+    lang={lang}
+    path="/writeups"
+    title={`${t('writeups.title')} — 0xMARO`}
+    description={t('writeups.desc')}
+  />
   <div class="wrap archive">
     <header class="archive__head">
       <span class="archive__eyebrow ltr">{t('writeups.eyebrow')}</span>
       <h1 class="archive__title">{t('writeups.title')}</h1>
       <p class="archive__desc">{t('writeups.desc')}</p>
-      <p class="archive__count ltr">{t('writeups.count').replace('{0}', String(surfaced.length))}</p>
+      <p class="archive__count ltr">
+        {t('writeups.count').replace('{0}', String(surfaced.length))}
+      </p>
     </header>
 
     {

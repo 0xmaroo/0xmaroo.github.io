@@ -82,7 +82,15 @@ const jsonLd = {
 ---
 
 <Base lang={lang} title={`${data.title} — 0xMARO`} description={data.summary}>
-  <Seo slot="head" lang={lang} path={path} alternates={alternates} robots={noindex ? 'noindex' : 'index'} />
+  <Seo
+    slot="head"
+    lang={lang}
+    path={path}
+    alternates={alternates}
+    robots={noindex ? 'noindex' : 'index'}
+    title={`${data.title} — 0xMARO`}
+    description={data.summary}
+  />
   <script slot="head" type="application/ld+json" set:html={JSON.stringify(jsonLd)} is:inline />
 
   <article class="writeup">
@@ -93,9 +101,14 @@ const jsonLd = {
 
       <div class="writeup__meta">
         <div class="writeup__stamps">
-          {data.severity && (
-            <Stamp variant={severityVariant[data.severity]} label={t(`severity.${data.severity}` as UIKey)} />
-          )}
+          {
+            data.severity && (
+              <Stamp
+                variant={severityVariant[data.severity]}
+                label={t(`severity.${data.severity}` as UIKey)}
+              />
+            )
+          }
           <Stamp variant={statusVariant[data.status]} label={t(`status.${data.status}` as UIKey)} />
         </div>
 
@@ -108,30 +121,38 @@ const jsonLd = {
             <dt>{t('writeup.targetType')}</dt>
             <dd class="ltr">{data.targetType}</dd>
           </div>
-          {data.cwe.length > 0 && (
-            <div class="fact">
-              <dt>CWE</dt>
-              <dd class="ltr">{data.cwe.join(', ')}</dd>
-            </div>
-          )}
-          {data.owasp.length > 0 && (
-            <div class="fact">
-              <dt>OWASP</dt>
-              <dd class="ltr">{data.owasp.join(' · ')}</dd>
-            </div>
-          )}
-          {data.toolsUsed.length > 0 && (
-            <div class="fact">
-              <dt>{t('writeup.tools')}</dt>
-              <dd class="ltr">{data.toolsUsed.join(', ')}</dd>
-            </div>
-          )}
-          {data.tags.length > 0 && (
-            <div class="fact">
-              <dt>{t('writeup.tags')}</dt>
-              <dd class="ltr">{data.tags.join(', ')}</dd>
-            </div>
-          )}
+          {
+            data.cwe.length > 0 && (
+              <div class="fact">
+                <dt>CWE</dt>
+                <dd class="ltr">{data.cwe.join(', ')}</dd>
+              </div>
+            )
+          }
+          {
+            data.owasp.length > 0 && (
+              <div class="fact">
+                <dt>OWASP</dt>
+                <dd class="ltr">{data.owasp.join(' · ')}</dd>
+              </div>
+            )
+          }
+          {
+            data.toolsUsed.length > 0 && (
+              <div class="fact">
+                <dt>{t('writeup.tools')}</dt>
+                <dd class="ltr">{data.toolsUsed.join(', ')}</dd>
+              </div>
+            )
+          }
+          {
+            data.tags.length > 0 && (
+              <div class="fact">
+                <dt>{t('writeup.tags')}</dt>
+                <dd class="ltr">{data.tags.join(', ')}</dd>
+              </div>
+            )
+          }
         </dl>
 
         <div class="writeup__dates">
