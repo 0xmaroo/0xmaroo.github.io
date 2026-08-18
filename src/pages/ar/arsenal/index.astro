@@ -153,8 +153,9 @@ const arsenal = await getCollection('arsenal');
 
   .arsenal__tools {
     font-family: var(--f-code);
-    font-size: var(--text-xs);
+    font-size: var(--text-sm);
     color: var(--text-lo);
+    overflow-wrap: anywhere;
   }
 
   .arsenal__used {
@@ -174,7 +175,8 @@ const arsenal = await getCollection('arsenal');
     text-decoration: none;
     border-block-end: var(--hairline) solid transparent;
     font-family: var(--f-code);
-    font-size: var(--text-xs);
+    font-size: var(--text-sm);
+    overflow-wrap: anywhere;
   }
 
   .arsenal__used a:hover {
