@@ -1,0 +1,175 @@
+---
+import { getRelativeLocaleUrl } from 'astro:i18n';
+import { relatedWriteupEntries, slugOf, type Writeup } from '../../lib/content';
+import type { Lab } from '../../lib/proof';
+import { useTranslations } from '../../i18n/utils';
+import type { Language } from '../../i18n/ui';
+
+interface Props {
+  lang: Language;
+  /** The lab rows to render — already surfaced through `surfaceLabs()`. */
+  rows: Lab[];
+  /** Full writeup collection, to resolve the per-row writeup link. */
+  writeups: Writeup[];
+  /** True on a platform page, to switch the empty-state message. */
+  filtered?: boolean;
+}
+
+const { lang, rows, writeups, filtered } = Astro.props;
+const t = useTranslations(lang);
+
+const yearOf = (d?: Date): string =>
+  d
+    ? new Intl.DateTimeFormat(lang === 'ar' ? 'ar' : 'en-US', {
+        year: 'numeric',
+        numberingSystem: 'latn',
+      }).format(d)
+    : '—';
+---
+
+{
+  rows.length > 0 ? (
+    <table class="labs__table">
+      <thead>
+        <tr>
+          <th scope="col">{t('labs.platform')}</th>
+          <th scope="col">{t('labs.year')}</th>
+          <th scope="col">{t('labs.title')}</th>
+          <th scope="col">{t('labs.writeup')}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {rows.map((l) => {
+          const w = l.data.writeup
+            ? relatedWriteupEntries(writeups, [l.data.writeup], lang)[0]
+            : undefined;
+          return (
+            <tr>
+              <td class="ltr">{l.data.platform}</td>
+              <td class="ltr">{yearOf(l.data.date)}</td>
+              <td>
+                <a class="labs__proof" href={l.data.proof} rel="nofollow noreferrer">
+                  {l.data.name}
+                  {l.data.result && <span class="labs__result ltr">{l.data.result}</span>}
+                </a>
+              </td>
+              <td>
+                {w ? (
+                  <a class="labs__link" href={getRelativeLocaleUrl(lang, `/writeups/${slugOf(w)}`)}>
+                    {t('labs.writeup')}
+                  </a>
+                ) : (
+                  <span class="labs__none" aria-hidden="true">
+                    —
+                  </span>
+                )}
+              </td>
+            </tr>
+          );
+        })}
+      </tbody>
+    </table>
+  ) : (
+    <p class="archive__empty">{filtered ? t('labs.noMatch') : t('labs.empty')}</p>
+  )
+}
+
+<style>
+  .archive__empty {
+    margin-block-start: var(--space-7);
+    color: var(--text-lo);
+    font-size: var(--step-1);
+  }
+
+  .labs__table {
+    width: 100%;
+    margin-block-start: var(--space-6);
+    border-collapse: collapse;
+    border: var(--hairline) solid var(--line);
+    font-size: var(--step--1);
+  }
+
+  .labs__table th {
+    text-align: start;
+    font-family: var(--f-cond);
+    font-size: var(--text-xs);
+    text-transform: uppercase;
+    letter-spacing: var(--ls-label);
+    color: var(--blue-400);
+    font-weight: 400;
+    padding: var(--space-3) var(--space-4);
+    border-block-end: var(--hairline) solid var(--line);
+    background: var(--ink-800);
+  }
+
+  html[lang='ar'] .labs__table th {
+    font-family: var(--f-body-ar);
+    text-transform: none;
+    letter-spacing: 0;
+  }
+
+  .labs__table td {
+    padding: var(--space-3) var(--space-4);
+    border-block-end: var(--hairline) solid var(--line);
+    color: var(--text);
+    vertical-align: top;
+  }
+
+  .labs__table tbody tr:last-child td {
+    border-block-end: none;
+  }
+
+  .labs__table tbody tr:hover td {
+    background: var(--ink-800);
+  }
+
+  .labs__proof {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    color: var(--text-hi);
+    text-decoration: none;
+    border-block-end: var(--hairline) solid transparent;
+    min-height: var(--touch-min);
+    justify-content: center;
+  }
+
+  .labs__proof:hover {
+    color: var(--sulfur-300);
+    border-block-end-color: var(--sulfur-400);
+  }
+
+  .labs__result {
+    font-family: var(--f-code);
+    font-size: var(--text-xs);
+    color: var(--blue-400);
+  }
+
+  .labs__link {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--touch-min);
+    font-family: var(--f-cond);
+    font-size: var(--text-sm);
+    text-transform: uppercase;
+    letter-spacing: var(--ls-label);
+    color: var(--text-lo);
+    text-decoration: none;
+    border-block-end: var(--hairline) solid transparent;
+  }
+
+  html[lang='ar'] .labs__link {
+    font-family: var(--f-body-ar);
+    text-transform: none;
+    letter-spacing: 0;
+  }
+
+  .labs__link:hover {
+    color: var(--sulfur-300);
+    border-block-end-color: var(--sulfur-400);
+  }
+
+  .labs__none {
+    color: var(--text-dim);
+  }
+</style>

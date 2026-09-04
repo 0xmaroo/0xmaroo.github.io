@@ -1,0 +1,21 @@
+---
+import LabsPlatformPage from '../../../../components/labs/LabsPlatformPage.astro';
+import { getCollection } from 'astro:content';
+import { labPlatforms, surfaceLabs } from '../../../../lib/proof';
+
+// Arabic counterpart of the pre-rendered labs platform routes.
+export async function getStaticPaths() {
+  const labs = await getCollection('labs');
+  const { shown } = surfaceLabs(labs);
+  return labPlatforms(shown)
+    .filter((p) => p.linkable)
+    .map((p) => ({
+      params: { platform: p.slug },
+      props: { platform: p.platform, slug: p.slug, rows: p.labs },
+    }));
+}
+
+const { platform, slug, rows } = Astro.props;
+---
+
+<LabsPlatformPage lang="ar" platform={platform} slug={slug} rows={rows} />

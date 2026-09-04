@@ -1,10 +1,10 @@
 ---
 import Base from '../../layouts/Base.astro';
 import Seo from '../../components/Seo.astro';
+import LabsPlatforms from '../../components/labs/LabsPlatforms.astro';
+import LabsTable from '../../components/labs/LabsTable.astro';
 import { getCollection } from 'astro:content';
-import { getRelativeLocaleUrl } from 'astro:i18n';
-import { buildsInProd, slugOf, type Writeup } from '../../lib/content';
-import { surfaceLabs } from '../../lib/proof';
+import { labPlatforms, surfaceLabs } from '../../lib/proof';
 import { useTranslations } from '../../i18n/utils';
 
 const lang = 'en';
@@ -17,19 +17,10 @@ for (const s of suppressed) {
   console.warn(`[proof] lab "${s.id}" held back — no real proof URL.`);
 }
 
-const resolveWriteup = (slug: string): Writeup | undefined => {
-  const local = writeups.find((w) => w.data.lang === lang && slugOf(w) === slug);
-  const fallback = writeups.find((w) => w.data.lang === 'en' && slugOf(w) === slug);
-  const found = local ?? fallback;
-  return found && buildsInProd(found) ? found : undefined;
-};
-
-const platforms = [...new Set(labs.map((l) => l.data.platform))].sort();
-const filter = new URL(Astro.url).searchParams.get('platform');
-const rows = filter ? shown.filter((l) => l.data.platform === filter) : shown;
-
-const yearOf = (d?: Date): string =>
-  d ? new Intl.DateTimeFormat('en-US', { year: 'numeric' }).format(d) : '—';
+// Chips derive from surfaced labs only, and a platform below the facet
+// threshold renders as text — the pre-rendered routes replace the old dead
+// `?platform=` query-param filter, which never worked on a static build.
+const platforms = labPlatforms(shown);
 ---
 
 <Base lang={lang} title={`${t('labs.title')} — 0xMARO`} description={t('labs.desc')}>
@@ -48,72 +39,8 @@ const yearOf = (d?: Date): string =>
       <p class="archive__count ltr">{t('labs.count').replace('{0}', String(shown.length))}</p>
     </header>
 
-    <nav class="labs__filter" aria-label={t('labs.platform')}>
-      <a
-        class:list={['labs__chip ltr', !filter && 'is-on']}
-        href={getRelativeLocaleUrl(lang, '/labs')}
-      >
-        {t('labs.all')}
-      </a>
-      {
-        platforms.map((p) => (
-          <a
-            class:list={['labs__chip ltr', filter === p && 'is-on']}
-            href={`${getRelativeLocaleUrl(lang, '/labs')}?platform=${encodeURIComponent(p)}`}
-          >
-            {p}
-          </a>
-        ))
-      }
-    </nav>
-
-    {
-      rows.length > 0 ? (
-        <table class="labs__table">
-          <thead>
-            <tr>
-              <th scope="col">{t('labs.platform')}</th>
-              <th scope="col">{t('labs.year')}</th>
-              <th scope="col">{t('labs.title')}</th>
-              <th scope="col">{t('labs.writeup')}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((l) => {
-              const w = l.data.writeup ? resolveWriteup(l.data.writeup) : undefined;
-              return (
-                <tr>
-                  <td class="ltr">{l.data.platform}</td>
-                  <td class="ltr">{yearOf(l.data.date)}</td>
-                  <td>
-                    <a class="labs__proof" href={l.data.proof} rel="nofollow noreferrer">
-                      {l.data.name}
-                      {l.data.result && <span class="labs__result ltr">{l.data.result}</span>}
-                    </a>
-                  </td>
-                  <td>
-                    {w ? (
-                      <a
-                        class="labs__link"
-                        href={getRelativeLocaleUrl(lang, `/writeups/${slugOf(w)}`)}
-                      >
-                        {t('labs.writeup')}
-                      </a>
-                    ) : (
-                      <span class="labs__none" aria-hidden="true">
-                        —
-                      </span>
-                    )}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      ) : (
-        <p class="archive__empty">{filter ? t('labs.noMatch') : t('labs.empty')}</p>
-      )
-    }
+    <LabsPlatforms lang={lang} platforms={platforms} />
+    <LabsTable lang={lang} rows={shown} writeups={writeups} />
   </div>
 </Base>
 
@@ -149,128 +76,6 @@ const yearOf = (d?: Date): string =>
     margin-block-start: var(--space-5);
     font-family: var(--f-code);
     font-size: var(--text-xs);
-    color: var(--text-dim);
-  }
-
-  .archive__empty {
-    margin-block-start: var(--space-7);
-    color: var(--text-lo);
-    font-size: var(--step-1);
-  }
-
-  .labs__filter {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--space-2);
-    margin-block-start: var(--space-6);
-  }
-
-  .labs__chip {
-    display: inline-flex;
-    align-items: center;
-    min-height: var(--touch-min);
-    padding-inline: var(--space-3);
-    font-family: var(--f-cond);
-    font-size: var(--text-sm);
-    text-transform: uppercase;
-    letter-spacing: var(--ls-label);
-    color: var(--text-lo);
-    text-decoration: none;
-    border: var(--hairline) solid var(--line);
-    border-radius: var(--radius);
-    transition:
-      color var(--t-fast) ease,
-      border-color var(--t-fast) ease;
-  }
-
-  .labs__chip:hover {
-    color: var(--text-hi);
-    border-color: var(--sulfur-400);
-  }
-
-  .labs__chip.is-on {
-    color: var(--ink-900);
-    background: var(--sulfur-400);
-    border-color: var(--sulfur-400);
-  }
-
-  .labs__table {
-    width: 100%;
-    margin-block-start: var(--space-6);
-    border-collapse: collapse;
-    border: var(--hairline) solid var(--line);
-    font-size: var(--step--1);
-  }
-
-  .labs__table th {
-    text-align: start;
-    font-family: var(--f-cond);
-    font-size: var(--text-xs);
-    text-transform: uppercase;
-    letter-spacing: var(--ls-label);
-    color: var(--blue-400);
-    font-weight: 400;
-    padding: var(--space-3) var(--space-4);
-    border-block-end: var(--hairline) solid var(--line);
-    background: var(--ink-800);
-  }
-
-  .labs__table td {
-    padding: var(--space-3) var(--space-4);
-    border-block-end: var(--hairline) solid var(--line);
-    color: var(--text);
-    vertical-align: top;
-  }
-
-  .labs__table tbody tr:last-child td {
-    border-block-end: none;
-  }
-
-  .labs__table tbody tr:hover td {
-    background: var(--ink-800);
-  }
-
-  .labs__proof {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-1);
-    color: var(--text-hi);
-    text-decoration: none;
-    border-block-end: var(--hairline) solid transparent;
-    min-height: var(--touch-min);
-    justify-content: center;
-  }
-
-  .labs__proof:hover {
-    color: var(--sulfur-300);
-    border-block-end-color: var(--sulfur-400);
-  }
-
-  .labs__result {
-    font-family: var(--f-code);
-    font-size: var(--text-xs);
-    color: var(--blue-400);
-  }
-
-  .labs__link {
-    display: inline-flex;
-    align-items: center;
-    min-height: var(--touch-min);
-    font-family: var(--f-cond);
-    font-size: var(--text-sm);
-    text-transform: uppercase;
-    letter-spacing: var(--ls-label);
-    color: var(--text-lo);
-    text-decoration: none;
-    border-block-end: var(--hairline) solid transparent;
-  }
-
-  .labs__link:hover {
-    color: var(--sulfur-300);
-    border-block-end-color: var(--sulfur-400);
-  }
-
-  .labs__none {
     color: var(--text-dim);
   }
 </style>

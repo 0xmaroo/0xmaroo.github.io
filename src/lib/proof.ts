@@ -1,4 +1,5 @@
 import type { CollectionEntry } from 'astro:content';
+import { FACET_MIN_ENTRIES, facetSlug } from './content';
 
 /**
  * Proof layer — plan/04-features.md F-11.
@@ -66,6 +67,39 @@ export const surfaceLabs = (entries: Lab[]): ProofFilterResult<Lab> =>
     () => 'participation',
     (e) => e.data.proof
   );
+
+export interface LabPlatform {
+  /** Platform name as stored in the YAML (`TryHackMe`, `CAT Reloaded`, …). */
+  platform: string;
+  /** URL segment (`facetSlug(platform)`). */
+  slug: string;
+  /** Surfaced labs on this platform. */
+  labs: Lab[];
+  /** True when a `/labs/platform/<slug>` route exists (`labs.length >= FACET_MIN_ENTRIES`). */
+  linkable: boolean;
+}
+
+/**
+ * Platform chips for the labs pages, derived ONLY from labs `surfaceLabs()`
+ * actually surfaces (a suppressed lab must not advertise a platform), with the
+ * same generation threshold as writeup facets — below it the platform renders
+ * as plain text, never as a link (plan/04 F-03 + F-05).
+ */
+export const labPlatforms = (shown: Lab[]): LabPlatform[] => {
+  const bySlug = new Map<string, LabPlatform>();
+  for (const lab of shown) {
+    const slug = facetSlug(lab.data.platform);
+    const existing = bySlug.get(slug);
+    if (existing) {
+      existing.labs.push(lab);
+    } else {
+      bySlug.set(slug, { platform: lab.data.platform, slug, labs: [lab], linkable: false });
+    }
+  }
+  const platforms = [...bySlug.values()];
+  for (const p of platforms) p.linkable = p.labs.length >= FACET_MIN_ENTRIES;
+  return platforms.sort((a, b) => a.platform.localeCompare(b.platform, 'en'));
+};
 
 /** Journey stations: only claim-bearing stations need a proof. */
 export const surfaceJourney = (entries: Journey[]): ProofFilterResult<Journey> =>

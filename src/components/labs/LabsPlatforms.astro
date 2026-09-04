@@ -1,0 +1,100 @@
+---
+import { getRelativeLocaleUrl } from 'astro:i18n';
+import type { LabPlatform } from '../../lib/proof';
+import { useTranslations } from '../../i18n/utils';
+import type { Language } from '../../i18n/ui';
+
+interface Props {
+  lang: Language;
+  /** Platform groups from `labPlatforms()` — built from surfaced labs only. */
+  platforms: LabPlatform[];
+  /** Slug of the platform page currently rendered, to mark the active chip. */
+  active?: string;
+}
+
+const { lang, platforms, active } = Astro.props;
+const t = useTranslations(lang);
+---
+
+<nav class="labs__filter" aria-label={t('labs.platform')}>
+  {/* The "all" chip's label is localized; platform chips stay Latin/LTR. */}
+  <a class:list={['labs__chip', !active && 'is-on']} href={getRelativeLocaleUrl(lang, '/labs')}>
+    {t('labs.all')}
+  </a>
+  {
+    platforms.map((p) =>
+      p.linkable ? (
+        <a
+          class:list={['labs__chip ltr', active === p.slug && 'is-on']}
+          href={getRelativeLocaleUrl(lang, `/labs/platform/${p.slug}`)}
+          aria-current={active === p.slug ? 'true' : undefined}
+        >
+          {p.platform}
+        </a>
+      ) : (
+        // Below FACET_MIN_ENTRIES: plain text, never a link (plan/04 F-03).
+        <span class:list={['labs__chip labs__chip--text', 'ltr']}>{p.platform}</span>
+      )
+    )
+  }
+</nav>
+
+<style>
+  .labs__filter {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    margin-block-start: var(--space-6);
+  }
+
+  .labs__chip {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--touch-min);
+    padding-inline: var(--space-3);
+    font-family: var(--f-cond);
+    font-size: var(--text-sm);
+    text-transform: uppercase;
+    letter-spacing: var(--ls-label);
+    color: var(--text-lo);
+    text-decoration: none;
+    border: var(--hairline) solid var(--line);
+    border-radius: var(--radius);
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .labs__chip {
+      transition:
+        color var(--t-fast) ease,
+        border-color var(--t-fast) ease;
+    }
+  }
+
+  .labs__chip:hover {
+    color: var(--text-hi);
+    border-color: var(--sulfur-400);
+  }
+
+  .labs__chip.is-on {
+    color: var(--ink-900);
+    background: var(--sulfur-400);
+    border-color: var(--sulfur-400);
+  }
+
+  /* Below-threshold platform: text, not a control — no border, no hover. */
+  .labs__chip--text {
+    color: var(--text-dim);
+    border-color: transparent;
+  }
+
+  .labs__chip--text:hover {
+    color: var(--text-dim);
+    border-color: transparent;
+  }
+
+  html[lang='ar'] .labs__chip {
+    font-family: var(--f-body-ar);
+    text-transform: none;
+    letter-spacing: 0;
+  }
+</style>

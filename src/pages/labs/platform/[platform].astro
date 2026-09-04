@@ -1,0 +1,23 @@
+---
+import LabsPlatformPage from '../../../components/labs/LabsPlatformPage.astro';
+import { getCollection } from 'astro:content';
+import { labPlatforms, surfaceLabs } from '../../../lib/proof';
+
+// Pre-rendered platform filter (plan/04 F-03 + F-05): one route per platform
+// with at least FACET_MIN_ENTRIES surfaced labs. The old `?platform=` query
+// param never worked on a static build — this replaces it.
+export async function getStaticPaths() {
+  const labs = await getCollection('labs');
+  const { shown } = surfaceLabs(labs);
+  return labPlatforms(shown)
+    .filter((p) => p.linkable)
+    .map((p) => ({
+      params: { platform: p.slug },
+      props: { platform: p.platform, slug: p.slug, rows: p.labs },
+    }));
+}
+
+const { platform, slug, rows } = Astro.props;
+---
+
+<LabsPlatformPage lang="en" platform={platform} slug={slug} rows={rows} />

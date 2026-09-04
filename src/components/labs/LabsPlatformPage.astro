@@ -1,0 +1,139 @@
+---
+import Base from '../../layouts/Base.astro';
+import Seo from '../Seo.astro';
+import LabsPlatforms from './LabsPlatforms.astro';
+import LabsTable from './LabsTable.astro';
+import { getCollection } from 'astro:content';
+import { getRelativeLocaleUrl } from 'astro:i18n';
+import { labPlatforms, surfaceLabs, type Lab } from '../../lib/proof';
+import { useTranslations } from '../../i18n/utils';
+import type { Language } from '../../i18n/ui';
+
+interface Props {
+  lang: Language;
+  /** Platform display name, as stored in the YAML. */
+  platform: string;
+  /** URL segment of the platform. */
+  slug: string;
+  /** Surfaced labs on this platform. */
+  rows: Lab[];
+}
+
+const { lang, platform, slug, rows } = Astro.props;
+const t = useTranslations(lang);
+const writeups = await getCollection('writeups');
+const labs = await getCollection('labs');
+const platformGroups = labPlatforms(surfaceLabs(labs).shown);
+const title = `${platform} · ${t('labs.title')} — 0xMARO`;
+---
+
+<Base lang={lang} title={title} description={t('labs.desc')}>
+  {/* Labs are not localized, so the counterpart route always exists. */}
+  <Seo
+    slot="head"
+    lang={lang}
+    path={`/labs/platform/${slug}`}
+    alternates={{ [lang === 'en' ? 'ar' : 'en']: `/labs/platform/${slug}` }}
+    robots="noindex"
+    title={title}
+    description={t('labs.desc')}
+  />
+  <div class="wrap archive">
+    <header class="archive__head">
+      <span class="archive__eyebrow ltr">{t('labs.eyebrow')}</span>
+      <h1 class="archive__title">{t('labs.title')}</h1>
+      <p class="archive__desc">{t('labs.desc')}</p>
+      <p class="archive__count ltr">{t('labs.count').replace('{0}', String(rows.length))}</p>
+      <p class="archive__active">
+        <span>{t('filter.active')}</span>
+        <span class="ltr">
+          {t('labs.platform')}: {platform}
+        </span>
+        <a class="archive__clear" href={getRelativeLocaleUrl(lang, '/labs')}>
+          {t('filter.clear')}
+        </a>
+      </p>
+    </header>
+
+    <LabsPlatforms lang={lang} platforms={platformGroups} active={slug} />
+    <LabsTable lang={lang} rows={rows} writeups={writeups} filtered />
+  </div>
+</Base>
+
+<style>
+  .archive {
+    padding-block: var(--space-7) var(--space-8);
+  }
+
+  .archive__head {
+    border-block-end: var(--hairline) solid var(--line);
+    padding-block-end: var(--space-6);
+  }
+
+  .archive__eyebrow {
+    font-family: var(--f-code);
+    font-size: var(--text-sm);
+    color: var(--blue-500);
+  }
+
+  .archive__title {
+    margin-block-start: var(--space-3);
+  }
+
+  .archive__desc {
+    margin-block-start: var(--space-4);
+    max-width: var(--measure-lead);
+    font-size: var(--step-1);
+    color: var(--text-lo);
+    line-height: var(--lh-lead);
+  }
+
+  .archive__count {
+    margin-block-start: var(--space-5);
+    font-family: var(--f-code);
+    font-size: var(--text-xs);
+    color: var(--text-dim);
+  }
+
+  .archive__active {
+    margin-block-start: var(--space-4);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2) var(--space-3);
+    font-family: var(--f-code);
+    font-size: var(--text-sm);
+    color: var(--text-hi);
+  }
+
+  html[lang='ar'] .archive__active {
+    font-family: var(--f-body-ar);
+    line-height: var(--lh-ar);
+  }
+
+  .archive__clear {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--touch-min);
+    padding-inline: var(--space-3);
+    font-family: var(--f-cond);
+    font-size: var(--text-sm);
+    text-transform: uppercase;
+    letter-spacing: var(--ls-label);
+    color: var(--text-lo);
+    text-decoration: none;
+    border: var(--hairline) solid var(--line);
+    border-radius: var(--radius);
+  }
+
+  .archive__clear:hover {
+    color: var(--text-hi);
+    border-color: var(--sulfur-400);
+  }
+
+  html[lang='ar'] .archive__clear {
+    font-family: var(--f-body-ar);
+    text-transform: none;
+    letter-spacing: 0;
+  }
+</style>
