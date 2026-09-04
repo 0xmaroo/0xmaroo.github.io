@@ -1,0 +1,22 @@
+---
+import ArchiveFacetPage from '../../../components/archive/ArchiveFacetPage.astro';
+import { getCollection } from 'astro:content';
+import { FACET_KINDS, facetGroups, forSurface, type FacetKind } from '../../../lib/content';
+
+// Pre-rendered single-dimension filter pages (plan/04 F-03): one route per
+// facet value with at least FACET_MIN_ENTRIES archive entries. No query
+// params, no client-side filtering — plain links, zero JavaScript.
+export async function getStaticPaths() {
+  const entries = await getCollection('writeups');
+  const archive = forSurface(entries, 'archive', 'en');
+  return FACET_KINDS.flatMap((kind) =>
+    facetGroups(archive, kind)
+      .filter((g) => g.linkable)
+      .map((g) => ({ params: { facet: kind, value: g.slug }, props: { kind, group: g } }))
+  );
+}
+
+const { kind, group } = Astro.props;
+---
+
+<ArchiveFacetPage lang="en" kind={kind as FacetKind} group={group} />

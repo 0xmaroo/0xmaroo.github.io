@@ -1,0 +1,155 @@
+---
+import Base from '../../layouts/Base.astro';
+import Seo from '../Seo.astro';
+import ArchiveFilters from './ArchiveFilters.astro';
+import ArchiveList from './ArchiveList.astro';
+import { getCollection } from 'astro:content';
+import { getRelativeLocaleUrl } from 'astro:i18n';
+import {
+  facetGroups,
+  facetLabelKey,
+  forSurface,
+  seriesOrdered,
+  type FacetGroup,
+  type FacetKind,
+} from '../../lib/content';
+import { useTranslations } from '../../i18n/utils';
+import type { Language, UIKey } from '../../i18n/ui';
+
+interface Props {
+  lang: Language;
+  kind: FacetKind;
+  group: FacetGroup;
+}
+
+const { lang, kind, group } = Astro.props;
+const t = useTranslations(lang);
+const entries = await getCollection('writeups');
+const archive = forSurface(entries, 'archive', lang);
+const other = lang === 'en' ? 'ar' : 'en';
+
+// hreflang only points at the other locale when that route was generated
+// there too — an empty Arabic archive must not produce a dead alternate.
+const otherArchive = forSurface(entries, 'archive', other);
+const hasOther = facetGroups(otherArchive, kind).some((g) => g.slug === group.slug && g.linkable);
+const alternates = hasOther ? { [other]: `/writeups/${kind}/${group.slug}` } : {};
+
+// Series pages read in series order; every other facet stays newest-first.
+const listed = kind === 'series' ? seriesOrdered(group.entries) : group.entries;
+// Severity labels are localized; other facet values are technical identifiers.
+const isTechnical = kind !== 'severity' && kind !== 'series';
+const display = kind === 'severity' ? t(`severity.${group.value}` as UIKey) : group.value;
+const title = `${display} · ${t('writeups.title')} — 0xMARO`;
+---
+
+<Base lang={lang} title={title} description={t('writeups.desc')}>
+  <Seo
+    slot="head"
+    lang={lang}
+    path={`/writeups/${kind}/${group.slug}`}
+    alternates={alternates}
+    robots="noindex"
+    title={title}
+    description={t('writeups.desc')}
+  />
+  <div class="wrap archive">
+    <header class="archive__head">
+      <span class="archive__eyebrow ltr">{t('writeups.eyebrow')}</span>
+      <h1 class="archive__title">{t('writeups.title')}</h1>
+      <p class="archive__desc">{t('writeups.desc')}</p>
+      <p class="archive__count ltr">
+        {t('writeups.count').replace('{0}', String(listed.length))}
+      </p>
+      <p class="archive__active">
+        <span>{t('filter.active')}</span>
+        <span class:list={[isTechnical && 'ltr']}>
+          {t(facetLabelKey[kind])}: {display}
+        </span>
+        <a class="archive__clear" href={getRelativeLocaleUrl(lang, '/writeups')}>
+          {t('filter.clear')}
+        </a>
+      </p>
+    </header>
+
+    <ArchiveFilters lang={lang} entries={archive} active={{ kind, slug: group.slug }} />
+    <ArchiveList lang={lang} entries={listed} all={entries} />
+  </div>
+</Base>
+
+<style>
+  .archive {
+    padding-block: var(--space-7) var(--space-8);
+  }
+
+  .archive__head {
+    border-block-end: var(--hairline) solid var(--line);
+    padding-block-end: var(--space-6);
+  }
+
+  .archive__eyebrow {
+    font-family: var(--f-code);
+    font-size: var(--text-sm);
+    color: var(--blue-500);
+  }
+
+  .archive__title {
+    margin-block-start: var(--space-3);
+  }
+
+  .archive__desc {
+    margin-block-start: var(--space-4);
+    max-width: var(--measure-lead);
+    font-size: var(--step-1);
+    color: var(--text-lo);
+    line-height: var(--lh-lead);
+  }
+
+  .archive__count {
+    margin-block-start: var(--space-5);
+    font-family: var(--f-code);
+    font-size: var(--text-xs);
+    color: var(--text-dim);
+  }
+
+  .archive__active {
+    margin-block-start: var(--space-4);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2) var(--space-3);
+    font-family: var(--f-code);
+    font-size: var(--text-sm);
+    color: var(--text-hi);
+  }
+
+  html[lang='ar'] .archive__active {
+    font-family: var(--f-body-ar);
+    line-height: var(--lh-ar);
+  }
+
+  .archive__clear {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--touch-min);
+    padding-inline: var(--space-3);
+    font-family: var(--f-cond);
+    font-size: var(--text-sm);
+    text-transform: uppercase;
+    letter-spacing: var(--ls-label);
+    color: var(--text-lo);
+    text-decoration: none;
+    border: var(--hairline) solid var(--line);
+    border-radius: var(--radius);
+  }
+
+  .archive__clear:hover {
+    color: var(--text-hi);
+    border-color: var(--sulfur-400);
+  }
+
+  html[lang='ar'] .archive__clear {
+    font-family: var(--f-body-ar);
+    text-transform: none;
+    letter-spacing: 0;
+  }
+</style>

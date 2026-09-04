@@ -1,4 +1,5 @@
 import type { CollectionEntry } from 'astro:content';
+import type { UIKey } from '../i18n/ui';
 
 /**
  * The single content-filtering layer — plan/02-architecture.md §2.5.
@@ -138,3 +139,206 @@ export const relatedWriteupEntries = (
       return local ?? entries.find((e) => e.data.lang === 'en' && slugOf(e) === slug);
     })
     .filter((e): e is Writeup => Boolean(e && buildsInProd(e)));
+
+/* ────────────────────────────────────────────────────────────────────────────
+ * Pre-rendered archive facets — plan/04-features.md F-03 (2026-09 correction).
+ *
+ * Filtering is single-dimension with one built path per value
+ * (`/writeups/<kind>/<slug>`, `/ar/writeups/<kind>/<slug>`). Query params
+ * cannot work on `output: 'static'` — `Astro.url` carries no search string at
+ * build time, so any page reading it is dead code (the exact defect this
+ * design replaced). Everything below is pure: pages pass entries that already
+ * survived `forSurface()` and never filter on their own.
+ * ──────────────────────────────────────────────────────────────────────────── */
+
+/**
+ * A facet value only gets a route (and a link) when at least this many archive
+ * entries match it. A value below the threshold renders as plain text, never
+ * as an `<a>` and never with a dead href — thin one-entry archive pages are
+ * deliberately not generated. Every threshold check reads THIS constant.
+ */
+export const FACET_MIN_ENTRIES = 2;
+
+export type FacetKind = 'category' | 'type' | 'cwe' | 'year' | 'severity' | 'series';
+
+/** Display order of the filter groups in the archive filter bar. */
+export const FACET_KINDS: readonly FacetKind[] = [
+  'category',
+  'type',
+  'cwe',
+  'year',
+  'severity',
+  'series',
+];
+
+/** i18n key naming each facet group — labels never live in components. */
+export const facetLabelKey: Record<FacetKind, UIKey> = {
+  category: 'filter.category',
+  type: 'filter.type',
+  cwe: 'filter.cwe',
+  year: 'filter.year',
+  severity: 'filter.severity',
+  series: 'filter.series',
+};
+
+/** URL segment for a facet value: `CWE-639` → `cwe-639`, `CAT Reloaded` → `cat-reloaded`. */
+export const facetSlug = (value: string): string =>
+  value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+
+/**
+ * Locale-independent path of a facet page (`/writeups/<kind>/<slug>`). Pages
+ * wrap it in `getRelativeLocaleUrl()` — the only sanctioned way to link.
+ */
+export const facetPath = (kind: FacetKind, slug: string): string => `/writeups/${kind}/${slug}`;
+
+/** Publication year in Western digits — years are technical, never localized. */
+export const yearOf = (entry: Writeup): string => String(entry.data.publishedAt.getUTCFullYear());
+
+/** The facet values a single entry contributes for `kind` (a writeup can carry several CWE ids). */
+export const facetValuesOf = (entry: Writeup, kind: FacetKind): string[] => {
+  switch (kind) {
+    case 'category':
+      return [entry.data.category];
+    case 'type':
+      return [entry.data.targetType];
+    case 'cwe':
+      return [...entry.data.cwe];
+    case 'year':
+      return [yearOf(entry)];
+    case 'severity':
+      return entry.data.severity ? [entry.data.severity] : [];
+    case 'series':
+      return entry.data.series ? [entry.data.series] : [];
+  }
+};
+
+export interface FacetGroup {
+  /** Value as stored in frontmatter — ids stay ids, they are never translated. */
+  value: string;
+  /** URL segment (`facetSlug(value)`). */
+  slug: string;
+  /** Matching entries, newest first (the `forSurface()` order is preserved). */
+  entries: Writeup[];
+  /** True when a route was generated for this value (`entries.length >= FACET_MIN_ENTRIES`). */
+  linkable: boolean;
+}
+
+/**
+ * Group archive-surfaced entries by facet value. Groups below
+ * `FACET_MIN_ENTRIES` are still returned — the filter bar shows them as plain
+ * text — but carry `linkable: false` so no route and no link ever point at
+ * them. Years sort newest first; everything else by count then name.
+ */
+export const facetGroups = (entries: Writeup[], kind: FacetKind): FacetGroup[] => {
+  const bySlug = new Map<string, FacetGroup>();
+  for (const e of entries) {
+    for (const value of facetValuesOf(e, kind)) {
+      const slug = facetSlug(value);
+      const existing = bySlug.get(slug);
+      if (existing) {
+        existing.entries.push(e);
+      } else {
+        bySlug.set(slug, { value, slug, entries: [e], linkable: false });
+      }
+    }
+  }
+  const groups = [...bySlug.values()];
+  for (const g of groups) g.linkable = g.entries.length >= FACET_MIN_ENTRIES;
+  return groups.sort((a, b) =>
+    kind === 'year'
+      ? Number(b.value) - Number(a.value)
+      : b.entries.length - a.entries.length ||
+        a.value.localeCompare(b.value, 'en', { numeric: true })
+  );
+};
+
+/** Linkable values per kind — the lookup cards and headers use to decide link vs text. */
+export type FacetIndex = Record<FacetKind, Set<string>>;
+
+/** Build the linkable-value lookup for one locale's archive-surfaced entries. */
+export const facetIndex = (archive: Writeup[]): FacetIndex => {
+  const index = {
+    category: new Set<string>(),
+    type: new Set<string>(),
+    cwe: new Set<string>(),
+    year: new Set<string>(),
+    severity: new Set<string>(),
+    series: new Set<string>(),
+  } as FacetIndex;
+  for (const kind of FACET_KINDS) {
+    for (const g of facetGroups(archive, kind)) {
+      if (g.linkable) index[kind].add(g.value);
+    }
+  }
+  return index;
+};
+
+/**
+ * Reading order inside one series: `seriesOrder` ascending when present,
+ * `publishedAt` ascending otherwise; entries without an explicit order sort
+ * after the ordered ones (plan/04 F-02 series strip).
+ */
+export const seriesOrdered = (members: Writeup[]): Writeup[] =>
+  [...members].sort((a, b) => {
+    const oa = a.data.seriesOrder ?? Number.POSITIVE_INFINITY;
+    const ob = b.data.seriesOrder ?? Number.POSITIVE_INFINITY;
+    if (oa !== ob) return oa - ob;
+    return a.data.publishedAt.getTime() - b.data.publishedAt.getTime();
+  });
+
+export interface SeriesPart {
+  position: number;
+  total: number;
+}
+
+/** `slug → position/total` for every series member in one locale's archive surface. */
+export const seriesParts = (archive: Writeup[]): Map<string, SeriesPart> => {
+  const byName = new Map<string, Writeup[]>();
+  for (const e of archive) {
+    const name = e.data.series;
+    if (!name) continue;
+    byName.set(name, [...(byName.get(name) ?? []), e]);
+  }
+  const parts = new Map<string, SeriesPart>();
+  for (const members of byName.values()) {
+    const ordered = seriesOrdered(members);
+    ordered.forEach((e, i) => parts.set(slugOf(e), { position: i + 1, total: ordered.length }));
+  }
+  return parts;
+};
+
+/**
+ * Related writeups ranked by shared CWE ids first, then shared OWASP ids,
+ * then same category — never by tags (plan/04 F-02). Ties break by newest
+ * `publishedAt`. A candidate sharing nothing is dropped, so an entry with no
+ * overlap yields an empty list and the caller renders no section at all.
+ */
+export const relatedByCwe = (
+  entries: Writeup[],
+  entry: Writeup,
+  lang: Writeup['data']['lang'],
+  limit = 3
+): Writeup[] => {
+  const shared = (a: string[], b: string[]): number => a.filter((x) => b.includes(x)).length;
+  return forSurface(entries, 'related', lang)
+    .filter((e) => slugOf(e) !== slugOf(entry))
+    .map((e) => ({
+      e,
+      cwe: shared(e.data.cwe, entry.data.cwe),
+      owasp: shared(e.data.owasp, entry.data.owasp),
+      cat: e.data.category === entry.data.category ? 1 : 0,
+    }))
+    .filter((s) => s.cwe > 0 || s.owasp > 0 || s.cat > 0)
+    .sort(
+      (a, b) =>
+        b.cwe - a.cwe ||
+        b.owasp - a.owasp ||
+        b.cat - a.cat ||
+        b.e.data.publishedAt.getTime() - a.e.data.publishedAt.getTime()
+    )
+    .slice(0, limit)
+    .map((s) => s.e);
+};

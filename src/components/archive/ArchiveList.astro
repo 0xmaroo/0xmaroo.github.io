@@ -1,0 +1,67 @@
+---
+import WriteupCard from '../cards/WriteupCard.astro';
+import {
+  caseNumbers,
+  facetIndex,
+  forSurface,
+  seriesParts,
+  slugOf,
+  type Writeup,
+} from '../../lib/content';
+import { useTranslations } from '../../i18n/utils';
+import type { Language } from '../../i18n/ui';
+
+interface Props {
+  lang: Language;
+  /** The entries to list — the full archive, or one facet group's members. */
+  entries: Writeup[];
+  /**
+   * The full writeup collection. Case numbers are derived across both
+   * languages, and the locale's archive surface (for facet linkability and
+   * series positions) is recomputed through `forSurface()` — a facet-filtered
+   * `entries` list must never stand in for either.
+   */
+  all: Writeup[];
+}
+
+const { lang, entries, all } = Astro.props;
+const t = useTranslations(lang);
+const archive = forSurface(all, 'archive', lang);
+const numbers = caseNumbers(all);
+const facets = facetIndex(archive);
+const parts = seriesParts(archive);
+---
+
+{
+  entries.length > 0 ? (
+    <div class="archive__grid">
+      {entries.map((e) => (
+        <WriteupCard
+          entry={e}
+          caseNo={numbers.get(slugOf(e)) ?? 0}
+          facets={facets}
+          seriesPart={parts.get(slugOf(e))}
+        />
+      ))}
+    </div>
+  ) : (
+    <p class="archive__empty">{t('writeups.empty')}</p>
+  )
+}
+
+<style>
+  .archive__grid {
+    margin-block-start: var(--space-6);
+    display: grid;
+    gap: var(--hairline);
+    background: var(--line);
+    border: var(--hairline) solid var(--line);
+    grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr));
+  }
+
+  .archive__empty {
+    margin-block-start: var(--space-7);
+    color: var(--text-lo);
+    font-size: var(--step-1);
+  }
+</style>

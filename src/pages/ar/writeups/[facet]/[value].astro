@@ -1,0 +1,20 @@
+---
+import ArchiveFacetPage from '../../../../components/archive/ArchiveFacetPage.astro';
+import { getCollection } from 'astro:content';
+import { FACET_KINDS, facetGroups, forSurface, type FacetKind } from '../../../../lib/content';
+
+// Arabic counterpart of the pre-rendered facet pages — same threshold, same rules.
+export async function getStaticPaths() {
+  const entries = await getCollection('writeups');
+  const archive = forSurface(entries, 'archive', 'ar');
+  return FACET_KINDS.flatMap((kind) =>
+    facetGroups(archive, kind)
+      .filter((g) => g.linkable)
+      .map((g) => ({ params: { facet: kind, value: g.slug }, props: { kind, group: g } }))
+  );
+}
+
+const { kind, group } = Astro.props;
+---
+
+<ArchiveFacetPage lang="ar" kind={kind as FacetKind} group={group} />
