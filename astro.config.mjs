@@ -24,6 +24,18 @@ export default defineConfig({
       wrap: false,
     },
   },
+  // CSP (plan/08-quality-bar.md §8.1): the meta-tag CSP cannot carry nonces or
+  // hashes, so `script-src 'self'` / `style-src 'self'` only hold if Astro never
+  // inlines a script or a stylesheet into the HTML — and Astro inlines assets
+  // under 4KB by default. Force everything into external /_astro/ files.
+  build: {
+    inlineStylesheets: 'never',
+  },
+  vite: {
+    build: {
+      assetsInlineLimit: 0,
+    },
+  },
   integrations: [
     mdx(),
     sitemap({
