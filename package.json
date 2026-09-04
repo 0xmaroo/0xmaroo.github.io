@@ -7,7 +7,7 @@
   },
   "scripts": {
     "dev": "astro dev",
-    "build": "astro build && pagefind --site dist && bash scripts/check-pagefind.sh",
+    "build": "astro build && node scripts/check-copy.mjs && pagefind --site dist && bash scripts/check-pagefind.sh",
     "preview": "astro preview",
     "check": "astro check",
     "lint": "eslint .",
