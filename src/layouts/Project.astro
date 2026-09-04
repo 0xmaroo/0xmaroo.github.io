@@ -7,6 +7,7 @@ import { getRelativeLocaleUrl } from 'astro:i18n';
 import { render } from 'astro:content';
 import { useTranslations } from '../i18n/utils';
 import { projectSlugOf, slugOf, type Project, type Writeup } from '../lib/content';
+import { ogImagePath } from '../lib/og';
 import { isTodo, surfaceProjectMetrics } from '../lib/proof';
 import type { Language, UIKey } from '../i18n/ui';
 import '../styles/prose.css';
@@ -45,6 +46,10 @@ const description = summary ?? t('projects.desc');
 const noindex = data.visibility.noindex || data.visibility.unlisted;
 const alternates = translation ? { [other]: path } : {};
 
+// `getRelativeLocaleUrl()` appends a trailing slash even to file routes
+// ('...slug.png/'), which 404s on GitHub Pages — strip it for the OG route.
+const ogUrl = getRelativeLocaleUrl(lang, ogImagePath('projects', slug)).replace(/\/+$/, '');
+
 const mdxComponents = { Callout };
 
 const jsonLd = {
@@ -69,6 +74,8 @@ const jsonLd = {
     robots={noindex ? 'noindex' : 'index'}
     title={`${data.title} — 0xMARO`}
     description={description}
+    image={ogUrl}
+    imageAlt={data.title}
   />
   <script slot="head" type="application/ld+json" set:html={JSON.stringify(jsonLd)} is:inline />
 

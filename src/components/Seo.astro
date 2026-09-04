@@ -17,6 +17,13 @@ interface Props {
   title?: string;
   /** Page description for og:description. */
   description?: string;
+  /**
+   * Site-relative URL of a page-specific OG image (Phase 3 per-entry images).
+   * Falls back to the per-locale default when an entry image doesn't exist.
+   */
+  image?: string;
+  /** Alt text for `image`, when one is passed. */
+  imageAlt?: string;
 }
 
 const { lang, path } = Astro.props;
@@ -35,8 +42,10 @@ const defaultHref = new URL(getRelativeLocaleUrl('en', alternates?.en ?? path), 
 const urlFor = (l: Language): string =>
   new URL(getRelativeLocaleUrl(l, alternates?.[l] ?? path), site).href;
 
-// Phase 3: default per-locale OG images generated at build time (src/lib/og.ts).
-const ogImage = new URL(`/og/og-default-${lang}.png`, site);
+// Phase 3: default per-locale OG images generated at build time (src/lib/og.ts);
+// an entry page passes its own generated image and only falls back when absent.
+const ogImage = new URL(Astro.props.image ?? `/og/og-default-${lang}.png`, site);
+const ogImageAlt = Astro.props.imageAlt;
 const ogLocale = lang === 'ar' ? 'ar_AR' : 'en_US';
 ---
 
@@ -52,6 +61,7 @@ const ogLocale = lang === 'ar' ? 'ar_AR' : 'en_US';
 <meta property="og:title" content={title} />
 {description && <meta property="og:description" content={description} />}
 <meta property="og:image" content={ogImage.href} />
+{ogImageAlt && <meta property="og:image:alt" content={ogImageAlt} />}
 <meta property="og:image:width" content="1200" />
 <meta property="og:image:height" content="630" />
 <meta name="twitter:card" content="summary_large_image" />

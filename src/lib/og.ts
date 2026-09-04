@@ -200,6 +200,185 @@ const fonts = (lang: Language) => {
       ];
 };
 
+/** satori → SVG → resvg → PNG, the one rasterizer every OG image goes through. */
+const toPng = (root: El, lang: Language): Promise<Buffer> =>
+  satori(root, { width: W, height: H, fonts: fonts(lang), embedFont: true }).then((svg) =>
+    new Resvg(svg, { fitTo: { mode: 'width', value: W }, background: C.ink900 }).render().asPng()
+  );
+
+/**
+ * Locale-independent route of an entry OG image; `getRelativeLocaleUrl()` turns
+ * it into `/og/...` or `/ar/og/...`, matching the endpoints in `src/pages/og`
+ * and `src/pages/ar/og` (same-slug EN/AR entries need distinct routes).
+ */
+export const ogImagePath = (section: 'writeups' | 'projects', slug: string): string =>
+  `og/${section}/${slug}.png`;
+
+/** Input for one entry image (writeup or project). */
+export interface EntryOg {
+  lang: Language;
+  title: string;
+  /** Technical mono eyebrow, always LTR: 'CASE 001 · WEB' / '§03 · gymos'. */
+  eyebrow: string;
+  /** Line under the title; `technical` renders mono/LTR (CWE ids, slugs). */
+  meta?: { text: string; technical: boolean };
+}
+
+const TITLE_FONT = 64;
+const TITLE_MAX_LINES = 3;
+// Wrap width reserves the corner where the brand mark sits, so a full
+// three-line title can never run under it.
+const BRAND_RESERVE = 200;
+const TITLE_WRAP = W - PAD * 2 - BRAND_RESERVE;
+// Average advance width of the Plex faces at semibold; satori has no
+// measurement API, so wrapping is cut by estimate and hard-capped.
+const TITLE_CHAR_WIDTH = 0.55;
+
+/**
+ * Deterministic word wrap: a title can never exceed TITLE_MAX_LINES, and a
+ * line that would overflow is cut on a word boundary with an ellipsis, so the
+ * frame (and the brand mark) is never overrun.
+ */
+const wrapTitle = (title: string): string[] => {
+  const maxChars = Math.floor(TITLE_WRAP / (TITLE_FONT * TITLE_CHAR_WIDTH));
+  const cut = (word: string): string => `${word.slice(0, maxChars - 1)}…`;
+  const lines: string[] = [];
+  let line = '';
+  let truncated = false;
+
+  for (const word of title.split(/\s+/)) {
+    const next = line ? `${line} ${word}` : word;
+    if (next.length <= maxChars) {
+      line = next;
+      continue;
+    }
+    // `word` has to start a new line — when the current one is the last
+    // slot, the title is truncated here on a word boundary.
+    if (lines.length === TITLE_MAX_LINES - 1) {
+      truncated = true;
+      break;
+    }
+    if (!line) {
+      line = cut(word);
+      continue;
+    }
+    lines.push(line);
+    line = word.length > maxChars ? cut(word) : word;
+  }
+  lines.push(line);
+  if (truncated && !lines[TITLE_MAX_LINES - 1].endsWith('…')) {
+    lines[TITLE_MAX_LINES - 1] += '…';
+  }
+  return lines;
+};
+
+/**
+ * The entry variant of the blueprint frame: eyebrow, wrapped title, meta.
+ *
+ * Positioning uses physical properties (`left`/`right`/`borderLeft`…), mirrored
+ * by hand for Arabic: satori (0.12) silently DROPS the logical ones
+ * (`insetInlineStart`, `borderInlineStart`, …) and ignores `direction` for
+ * layout, so an RTL frame must swap sides explicitly. The shared background
+ * (`gridLines()`, colours, fonts, sizes) is untouched — the default images
+ * keep rendering exactly as before.
+ */
+const entryFrame = (entry: EntryOg): El => {
+  const isAr = entry.lang === 'ar';
+  const titleLines = wrapTitle(entry.title);
+
+  const column: El[] = [
+    el(
+      'div',
+      {
+        display: 'flex',
+        fontFamily: 'Mono',
+        fontSize: 20,
+        color: C.blue400,
+        letterSpacing: 2,
+      },
+      entry.eyebrow
+    ),
+    el(
+      'div',
+      {
+        display: 'flex',
+        flexDirection: 'column',
+        fontFamily: 'Body',
+        fontWeight: isAr ? 500 : 600,
+        fontSize: TITLE_FONT,
+        lineHeight: isAr ? 1.85 : 1.25,
+        color: C.textHi,
+        textAlign: isAr ? 'right' : 'left',
+        maxWidth: TITLE_WRAP,
+      },
+      titleLines.map((l) => el('div', { display: 'flex' }, l))
+    ),
+  ];
+  if (entry.meta) {
+    column.push(
+      el(
+        'div',
+        {
+          display: 'flex',
+          fontFamily: entry.meta.technical ? 'Mono' : 'Body',
+          fontWeight: entry.meta.technical ? 400 : isAr ? 500 : 600,
+          fontSize: entry.meta.technical ? 18 : 26,
+          lineHeight: entry.meta.technical ? 1.5 : isAr ? 1.85 : 1.5,
+          color: entry.meta.technical ? C.textLo : C.sulfur400,
+          letterSpacing: entry.meta.technical ? 1 : 0,
+          textAlign: entry.meta.technical || !isAr ? 'left' : 'right',
+        },
+        entry.meta.text
+      )
+    );
+  }
+
+  const corner = el('div', {
+    position: 'absolute',
+    top: PAD,
+    [isAr ? 'right' : 'left']: PAD,
+    width: 28,
+    height: 28,
+    [isAr ? 'borderRight' : 'borderLeft']: `2px solid ${C.blue500}`,
+    borderTop: `2px solid ${C.blue500}`,
+  });
+
+  const brand = el(
+    'div',
+    {
+      position: 'absolute',
+      bottom: PAD,
+      [isAr ? 'left' : 'right']: PAD,
+      display: 'flex',
+      fontFamily: 'Mono',
+      fontSize: 18,
+      color: C.textDim,
+      letterSpacing: 1,
+    },
+    `${site.domain.replace('https://', '')} · §`
+  );
+
+  return el(
+    'div',
+    {
+      display: 'flex',
+      width: W,
+      height: H,
+      padding: PAD,
+      position: 'relative',
+      background: C.ink900,
+      alignItems: 'flex-end',
+      justifyContent: isAr ? 'flex-end' : 'flex-start',
+    },
+    [
+      ...gridLines(),
+      corner,
+      el('div', { display: 'flex', flexDirection: 'column', gap: 24 }, column),
+      brand,
+    ]
+  );
+};
+
 /** Render and write `<public>/og/og-default-<lang>.png`. */
 export async function generateDefaultOgImages(): Promise<string[]> {
   const outDir = join(process.cwd(), 'public', 'og');
@@ -207,21 +386,15 @@ export async function generateDefaultOgImages(): Promise<string[]> {
   const written: string[] = [];
 
   for (const lang of ['en', 'ar'] as Language[]) {
-    const svg = await satori(frame(lang), {
-      width: W,
-      height: H,
-      fonts: fonts(lang),
-      embedFont: true,
-    });
-    const png = new Resvg(svg, {
-      fitTo: { mode: 'width', value: W },
-      background: C.ink900,
-    })
-      .render()
-      .asPng();
+    const png = await toPng(frame(lang), lang);
     const out = join(outDir, `og-default-${lang}.png`);
     writeFileSync(out, png);
     written.push(out);
   }
   return written;
+}
+
+/** Render ONE entry (title, eyebrow with case number, meta/CWE, language). */
+export async function renderEntryOgImage(entry: EntryOg): Promise<Buffer> {
+  return toPng(entryFrame(entry), entry.lang);
 }

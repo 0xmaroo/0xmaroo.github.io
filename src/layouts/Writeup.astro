@@ -12,6 +12,7 @@ import { render } from 'astro:content';
 import type { MarkdownHeading } from 'astro';
 import { useTranslations } from '../i18n/utils';
 import { slugOf, type Writeup } from '../lib/content';
+import { ogImagePath } from '../lib/og';
 import { readingTimeOf } from '../lib/reading-time';
 import type { Language, UIKey } from '../i18n/ui';
 import '../styles/prose.css';
@@ -47,6 +48,10 @@ const hideFromSearch = data.visibility.hideFrom.includes('search');
 const noindex = data.visibility.noindex || isUnlisted;
 const pagefindIgnore = isUnlisted || hideFromSearch;
 const alternates = translation ? { [other]: path } : {};
+
+// `getRelativeLocaleUrl()` appends a trailing slash even to file routes
+// ('...slug.png/'), which 404s on GitHub Pages — strip it for the OG route.
+const ogUrl = getRelativeLocaleUrl(lang, ogImagePath('writeups', slug)).replace(/\/+$/, '');
 
 const toc: MarkdownHeading[] = headings.filter((h) => h.depth === 2);
 
@@ -90,6 +95,8 @@ const jsonLd = {
     robots={noindex ? 'noindex' : 'index'}
     title={`${data.title} — 0xMARO`}
     description={data.summary}
+    image={ogUrl}
+    imageAlt={data.title}
   />
   <script slot="head" type="application/ld+json" set:html={JSON.stringify(jsonLd)} is:inline />
 
