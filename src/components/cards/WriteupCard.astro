@@ -2,7 +2,15 @@
 import { getRelativeLocaleUrl } from 'astro:i18n';
 import Stamp from '../writeup/Stamp.astro';
 import { useTranslations } from '../../i18n/utils';
-import { slugOf, type Writeup } from '../../lib/content';
+import {
+  facetPath,
+  facetSlug,
+  slugOf,
+  type FacetIndex,
+  type FacetKind,
+  type SeriesPart,
+  type Writeup,
+} from '../../lib/content';
 import { readingTimeOf } from '../../lib/reading-time';
 import type { UIKey } from '../../i18n/ui';
 
@@ -10,9 +18,18 @@ interface Props {
   entry: Writeup;
   /** Sequential case number from `caseNumbers()` in src/lib/content.ts. */
   caseNo: number;
+  /**
+   * Linkable facet values for the current locale (`facetIndex()` in
+   * src/lib/content.ts). A metadata value present here links to its
+   * pre-rendered facet page; otherwise it renders as plain text. Surfaces
+   * that don't compute it (home, projects) omit it and everything stays text.
+   */
+  facets?: FacetIndex;
+  /** Series position (`seriesParts()` in src/lib/content.ts), when in a series. */
+  seriesPart?: SeriesPart;
 }
 
-const { entry, caseNo } = Astro.props;
+const { entry, caseNo, facets, seriesPart } = Astro.props;
 const data = entry.data;
 const lang = data.lang;
 const t = useTranslations(lang);
@@ -27,19 +44,65 @@ const minutes = data.readingTime ?? readingTimeOf(entry.body ?? '', lang);
 const caseId = `${t('case.id')} ${String(caseNo).padStart(3, '0')} · ${data.category.toUpperCase()}`;
 const reading = t('case.min').replace('{0}', String(minutes));
 const href = getRelativeLocaleUrl(lang, `/writeups/${slug}`);
+
+// Metadata link vs text (plan/04 F-03): a value with its own route links to
+// it; a below-threshold value is plain text, never a dead href.
+const facetHref = (kind: FacetKind, value: string): string | undefined =>
+  facets?.[kind].has(value)
+    ? getRelativeLocaleUrl(lang, facetPath(kind, facetSlug(value)))
+    : undefined;
+const seriesPartLabel = seriesPart
+  ? t('series.part')
+      .replace('{0}', String(seriesPart.position))
+      .replace('{1}', String(seriesPart.total))
+  : undefined;
 ---
 
-<a class="case" href={href}>
+<article class="case">
   <div class="case__top">
     <span class="case__id ltr">{caseId}</span>
     <Stamp variant={statusVariant[data.status]} label={t(`status.${data.status}` as UIKey)} />
   </div>
-  <h3 class="case__title">{data.title}</h3>
+  <h3 class="case__title">
+    {
+      /* The only anchor spans the card via ::after; metadata links must never
+        nest inside it, so the card itself is not a link. */
+    }
+    <a class="case__main" href={href}>
+      {data.title}
+    </a>
+  </h3>
   <div class="case__meta ltr">
+    {
+      data.series && (
+        <span>
+          {facetHref('series', data.series) ? (
+            <a class="case__flink" href={facetHref('series', data.series)}>
+              {data.series}
+            </a>
+          ) : (
+            data.series
+          )}{' '}
+          {seriesPartLabel && <span>{seriesPartLabel}</span>}
+        </span>
+      )
+    }
     {
       data.cwe.length > 0 && (
         <span>
-          <span class="k">CWE</span> {data.cwe.join(', ')}
+          <span class="k">CWE</span>{' '}
+          {data.cwe.map((c, i) => (
+            <>
+              {i > 0 && ', '}
+              {facetHref('cwe', c) ? (
+                <a class="case__flink" href={facetHref('cwe', c)}>
+                  {c}
+                </a>
+              ) : (
+                c
+              )}
+            </>
+          ))}
         </span>
       )
     }
@@ -50,20 +113,37 @@ const href = getRelativeLocaleUrl(lang, `/writeups/${slug}`);
         </span>
       )
     }
-    <span>{data.targetType}</span>
+    {
+      facetHref('category', data.category) ? (
+        <a class="case__flink" href={facetHref('category', data.category)}>
+          {data.category}
+        </a>
+      ) : (
+        <span>{data.category}</span>
+      )
+    }
+    {
+      facetHref('type', data.targetType) ? (
+        <a class="case__flink" href={facetHref('type', data.targetType)}>
+          {data.targetType}
+        </a>
+      ) : (
+        <span>{data.targetType}</span>
+      )
+    }
     <span>{reading}</span>
     {data.hasFix && <span class="case__fix">{t('case.fix')}</span>}
   </div>
-</a>
+</article>
 
 <style>
   .case {
+    position: relative;
     display: flex;
     flex-direction: column;
     gap: var(--space-4);
     padding: var(--space-5);
     background: var(--ink-900);
-    text-decoration: none;
     transition: background var(--t-fast) ease;
   }
 
@@ -99,10 +179,24 @@ const href = getRelativeLocaleUrl(lang, `/writeups/${slug}`);
     color: var(--sulfur-300);
   }
 
+  /* Stretched link: the title anchor covers the whole card while the metadata
+     links below stay clickable above it. */
+  .case__main {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  .case__main::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+  }
+
   .case__meta {
     margin-block-start: auto;
     display: flex;
     flex-wrap: wrap;
+    align-items: center;
     gap: var(--space-2) var(--space-3);
     font-family: var(--f-code);
     font-size: var(--text-xs);
@@ -111,6 +205,22 @@ const href = getRelativeLocaleUrl(lang, `/writeups/${slug}`);
 
   .case__meta .k {
     color: var(--blue-400);
+  }
+
+  .case__flink {
+    position: relative;
+    z-index: 1;
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--touch-min);
+    color: var(--blue-400);
+    text-decoration: none;
+    border-block-end: var(--hairline) solid transparent;
+  }
+
+  .case__flink:hover {
+    color: var(--sulfur-300);
+    border-block-end-color: var(--sulfur-400);
   }
 
   .case__fix {

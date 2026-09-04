@@ -7,11 +7,24 @@ import Payload from '../components/writeup/Payload.astro';
 import FixDiff from '../components/writeup/FixDiff.astro';
 import DeadEnd from '../components/writeup/DeadEnd.astro';
 import Terminal from '../components/writeup/Terminal.astro';
+import WriteupCard from '../components/cards/WriteupCard.astro';
 import { getRelativeLocaleUrl } from 'astro:i18n';
-import { render } from 'astro:content';
+import { getCollection, render } from 'astro:content';
 import type { MarkdownHeading } from 'astro';
 import { useTranslations } from '../i18n/utils';
-import { slugOf, type Writeup } from '../lib/content';
+import {
+  caseNumbers,
+  facetIndex,
+  facetPath,
+  facetSlug,
+  forSurface,
+  relatedByCwe,
+  seriesOrdered,
+  seriesParts,
+  slugOf,
+  type FacetKind,
+  type Writeup,
+} from '../lib/content';
 import { ogImagePath } from '../lib/og';
 import { readingTimeOf } from '../lib/reading-time';
 import type { Language, UIKey } from '../i18n/ui';
@@ -54,6 +67,29 @@ const alternates = translation ? { [other]: path } : {};
 const ogUrl = getRelativeLocaleUrl(lang, ogImagePath('writeups', slug)).replace(/\/+$/, '');
 
 const toc: MarkdownHeading[] = headings.filter((h) => h.depth === 2);
+
+// Archive context for the series strip, the related section and the facet
+// links on metadata — everything derives from `forSurface('archive')` so a
+// draft or unlisted entry can never leak in through a sidebar.
+const allWriteups = await getCollection('writeups');
+const archive = forSurface(allWriteups, 'archive', lang);
+const facets = facetIndex(archive);
+const parts = seriesParts(archive);
+const numbers = caseNumbers(allWriteups);
+const related = relatedByCwe(allWriteups, entry, lang);
+
+// Metadata link vs text (plan/04 F-03): a value with its own route links to
+// it; a below-threshold value is plain text, never a dead href.
+const facetHref = (kind: FacetKind, value: string): string | undefined =>
+  facets[kind].has(value)
+    ? getRelativeLocaleUrl(lang, facetPath(kind, facetSlug(value)))
+    : undefined;
+
+const seriesMembers = data.series
+  ? seriesOrdered(archive.filter((e) => e.data.series === data.series))
+  : undefined;
+const seriesHref = data.series ? facetHref('series', data.series) : undefined;
+const severityHref = data.severity ? facetHref('severity', data.severity) : undefined;
 
 const severityVariant = {
   critical: 'crit',
@@ -111,30 +147,75 @@ const jsonLd = {
       <div class="writeup__meta">
         <div class="writeup__stamps">
           {
-            data.severity && (
-              <Stamp
-                variant={severityVariant[data.severity]}
-                label={t(`severity.${data.severity}` as UIKey)}
-              />
-            )
+            data.severity &&
+              (severityHref ? (
+                <a class="writeup__sevlink" href={severityHref}>
+                  <Stamp
+                    variant={severityVariant[data.severity]}
+                    label={t(`severity.${data.severity}` as UIKey)}
+                  />
+                </a>
+              ) : (
+                <Stamp
+                  variant={severityVariant[data.severity]}
+                  label={t(`severity.${data.severity}` as UIKey)}
+                />
+              ))
           }
           <Stamp variant={statusVariant[data.status]} label={t(`status.${data.status}` as UIKey)} />
         </div>
 
         <dl class="writeup__facts">
           <div class="fact">
+            <dt>{t('filter.category')}</dt>
+            <dd class="ltr">
+              {
+                facetHref('category', data.category) ? (
+                  <a class="fact__link" href={facetHref('category', data.category)}>
+                    {data.category}
+                  </a>
+                ) : (
+                  data.category
+                )
+              }
+            </dd>
+          </div>
+          <div class="fact">
             <dt>{t('writeup.target')}</dt>
             <dd class="ltr">{data.target}</dd>
           </div>
           <div class="fact">
             <dt>{t('writeup.targetType')}</dt>
-            <dd class="ltr">{data.targetType}</dd>
+            <dd class="ltr">
+              {
+                facetHref('type', data.targetType) ? (
+                  <a class="fact__link" href={facetHref('type', data.targetType)}>
+                    {data.targetType}
+                  </a>
+                ) : (
+                  data.targetType
+                )
+              }
+            </dd>
           </div>
           {
             data.cwe.length > 0 && (
               <div class="fact">
                 <dt>CWE</dt>
-                <dd class="ltr">{data.cwe.join(', ')}</dd>
+                <dd class="ltr">
+                  {data.cwe.map((c, i) => (
+                    <>
+                      {i > 0 && ', '}
+                      {facetHref('cwe', c) ? (
+                        <a class="fact__link" href={facetHref('cwe', c)}>
+                          {c}
+                        </a>
+                      ) : (
+                        c
+                      )}
+                    </>
+                  ))}
+                </dd>
               </div>
             )
           }
@@ -173,6 +254,38 @@ const jsonLd = {
       </div>
     </header>
 
+    {
+      seriesMembers && seriesMembers.length > 0 && (
+        <nav class="wrap writeup__series" aria-label={t('filter.series')}>
+          <p class="writeup__series-name">
+            <span class="u-label">{t('series.label')}</span>
+            {seriesHref ? (
+              <a class="writeup__series-link" href={seriesHref}>
+                {data.series}
+              </a>
+            ) : (
+              <span>{data.series}</span>
+            )}
+          </p>
+          <ol class="writeup__series-list">
+            {seriesMembers.map((m) =>
+              slugOf(m) === slug ? (
+                <li>
+                  <span class="writeup__series-current" aria-current="true">
+                    {m.data.title}
+                  </span>
+                </li>
+              ) : (
+                <li>
+                  <a href={getRelativeLocaleUrl(lang, `/writeups/${slugOf(m)}`)}>{m.data.title}</a>
+                </li>
+              )
+            )}
+          </ol>
+        </nav>
+      )
+    }
+
     <div class="wrap writeup__grid">
       {
         toc.length > 0 && (
@@ -193,6 +306,26 @@ const jsonLd = {
         <Content components={mdxComponents} />
       </div>
     </div>
+
+    {
+      related.length > 0 && (
+        <aside class="wrap writeup__related" aria-labelledby="related-title">
+          <h2 id="related-title" class="u-label">
+            {t('related.title')}
+          </h2>
+          <div class="writeup__related-grid">
+            {related.map((e) => (
+              <WriteupCard
+                entry={e}
+                caseNo={numbers.get(slugOf(e)) ?? 0}
+                facets={facets}
+                seriesPart={parts.get(slugOf(e))}
+              />
+            ))}
+          </div>
+        </aside>
+      )
+    }
 
     <footer class="wrap writeup__foot">
       {
@@ -276,6 +409,128 @@ const jsonLd = {
     margin: var(--space-1) 0 0;
     font-size: var(--step--1);
     color: var(--text);
+  }
+
+  /* Facet link inside a fact value — link only when the route exists. */
+  .fact__link {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--touch-min);
+    color: var(--blue-400);
+    text-decoration: none;
+    border-block-end: var(--hairline) solid transparent;
+  }
+
+  .fact__link:hover {
+    color: var(--sulfur-300);
+    border-block-end-color: var(--sulfur-400);
+  }
+
+  /* Severity stamp wrapped in its facet link, kept at the touch-target floor. */
+  .writeup__sevlink {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--touch-min);
+  }
+
+  /* ── Series strip (plan/04 F-02): compact, above the article body ── */
+  .writeup__series {
+    padding-block-start: var(--space-6);
+  }
+
+  .writeup__series-name {
+    margin: 0 0 var(--space-3);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2) var(--space-3);
+    font-family: var(--f-display);
+    font-size: var(--step-0);
+    font-weight: 600;
+    letter-spacing: var(--ls-display);
+    color: var(--text-hi);
+  }
+
+  html[lang='ar'] .writeup__series-name {
+    font-family: var(--f-body-ar);
+    letter-spacing: 0;
+    line-height: var(--lh-ar);
+  }
+
+  .writeup__series-name .u-label {
+    color: var(--text-dim);
+  }
+
+  .writeup__series-link {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--touch-min);
+    color: var(--text-hi);
+    text-decoration: none;
+    border-block-end: var(--hairline) solid transparent;
+  }
+
+  .writeup__series-link:hover {
+    color: var(--sulfur-300);
+    border-block-end-color: var(--sulfur-400);
+  }
+
+  .writeup__series-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+  }
+
+  .writeup__series-list a,
+  .writeup__series-current {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--touch-min);
+    font-size: var(--step--1);
+    line-height: var(--lh-body);
+    color: var(--text-lo);
+    text-decoration: none;
+  }
+
+  html[lang='ar'] .writeup__series-list a,
+  html[lang='ar'] .writeup__series-current {
+    line-height: var(--lh-ar);
+  }
+
+  .writeup__series-list a {
+    border-block-end: var(--hairline) solid transparent;
+  }
+
+  .writeup__series-list a:hover {
+    color: var(--sulfur-300);
+    border-block-end-color: var(--sulfur-400);
+  }
+
+  .writeup__series-current {
+    color: var(--sulfur-300);
+  }
+
+  /* ── Related case files (plan/04 F-02): matched by CWE, never padded ── */
+  .writeup__related {
+    padding-block: var(--space-6);
+    border-block-start: var(--hairline) solid var(--line);
+  }
+
+  .writeup__related .u-label {
+    display: block;
+    margin-block-end: var(--space-4);
+    color: var(--text-dim);
+  }
+
+  .writeup__related-grid {
+    display: grid;
+    gap: var(--hairline);
+    background: var(--line);
+    border: var(--hairline) solid var(--line);
+    grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr));
   }
 
   .writeup__dates {
