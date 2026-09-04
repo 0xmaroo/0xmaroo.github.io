@@ -30,7 +30,25 @@ const navItems = (Object.entries(sections) as SectionEntry[])
     <nav class="nav__links" aria-label={t('nav.primary')}>
       {navItems.map((item) => <a href={item.href}>{item.label}</a>)}
     </nav>
-    <LangSwitch lang={lang} />
+    <div class="nav__end">
+      <button type="button" class="nav__search" data-palette-open>
+        <svg
+          class="nav__search-icon ltr"
+          aria-hidden="true"
+          width="14"
+          height="14"
+          viewBox="0 0 16 16"
+        >
+          <circle cx="7" cy="7" r="4.5" fill="none" stroke="currentColor" stroke-width="1.5"
+          ></circle>
+          <path d="M10.5 10.5 14 14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
+          ></path>
+        </svg>
+        <span class="nav__search-label">{t('palette.open')}</span>
+        <kbd class="nav__search-kbd ltr" data-palette-kbd aria-hidden="true"></kbd>
+      </button>
+      <LangSwitch lang={lang} />
+    </div>
   </div>
 </header>
 
@@ -102,5 +120,75 @@ const navItems = (Object.entries(sections) as SectionEntry[])
     font-family: var(--f-body-ar);
     text-transform: none;
     letter-spacing: 0;
+  }
+
+  /* ── Command palette trigger — touch-first, shortcut hint on fine pointers ── */
+  .nav__end {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+  }
+
+  /* Below 760px the nav links are gone; the trigger + language switch still
+     push to the inline-end edge. */
+  @media (max-width: 759px) {
+    .nav__end {
+      margin-inline-start: auto;
+    }
+  }
+
+  /* Hidden until JS is live — without it the palette cannot open, and a dead
+     button would fail the a11y floor. */
+  .nav__search {
+    display: none;
+  }
+
+  :global(html.js) .nav__search {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-block-size: var(--touch-min);
+    padding-inline: var(--space-3);
+    font-family: var(--f-cond);
+    font-size: var(--text-sm);
+    text-transform: uppercase;
+    letter-spacing: var(--ls-label);
+    color: var(--text-lo);
+    background: none;
+    border: var(--hairline) solid var(--ink-600);
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition:
+      color var(--t-fast) ease,
+      border-color var(--t-fast) ease;
+  }
+
+  :global(html.js) .nav__search:hover {
+    color: var(--text-hi);
+    border-color: var(--sulfur-400);
+  }
+
+  html[lang='ar'] .nav__search {
+    font-family: var(--f-body-ar);
+    text-transform: none;
+    letter-spacing: 0;
+  }
+
+  /* Empty until the palette script fills the platform hint (⌘K / Ctrl K);
+     coarse pointers get no hint at all. */
+  .nav__search-kbd {
+    display: none;
+    font-family: var(--f-code);
+    font-size: var(--text-2xs);
+    color: var(--text-dim);
+    border: var(--hairline) solid var(--ink-600);
+    border-radius: var(--radius);
+    padding: var(--space-1) var(--space-2);
+  }
+
+  @media (pointer: fine) {
+    :global(html.js) .nav__search-kbd:not(:empty) {
+      display: inline-block;
+    }
   }
 </style>

@@ -1,0 +1,490 @@
+---
+import { getRelativeLocaleUrl } from 'astro:i18n';
+import { languages, type Language, type UIKey } from '../../i18n/ui';
+import { localeHrefs, useTranslations } from '../../i18n/utils';
+import { sections, sectionPaths } from '../../config/site';
+
+interface Props {
+  lang: Language;
+}
+
+const { lang } = Astro.props;
+const t = useTranslations(lang);
+const other: Language = lang === 'en' ? 'ar' : 'en';
+
+// Nav entries exactly as Header.astro builds them — a section disabled or
+// pulled from the nav in site.ts can never appear here either.
+type SectionEntry = [keyof typeof sections, { enabled: boolean; inNav: boolean }];
+const navItems = (Object.entries(sections) as SectionEntry[])
+  .filter(([, conf]) => conf.enabled && conf.inNav)
+  .map(([key]) => ({
+    href: getRelativeLocaleUrl(lang, sectionPaths[key]),
+    label: t(`nav.${key}` as UIKey),
+  }));
+
+// Same-page language switch, same source of truth as LangSwitch.
+const { [other]: langHref } = localeHrefs(Astro.url.pathname);
+
+// Everything the client script needs, passed as JSON — no copy in the script.
+const cfg = {
+  nav: navItems,
+  langHref,
+  strings: {
+    searching: t('search.searching'),
+    results: t('palette.results'),
+    empty: t('search.empty'),
+    error: t('search.error'),
+  },
+  kbd: { mac: t('palette.kbdMac'), other: t('palette.kbdCtrl') },
+};
+---
+
+<dialog
+  id="cmdk"
+  class="palette"
+  aria-label={t('palette.label')}
+  data-palette={JSON.stringify(cfg)}
+>
+  <div class="palette__head">
+    <svg class="palette__icon ltr" aria-hidden="true" width="16" height="16" viewBox="0 0 16 16">
+      <circle cx="7" cy="7" r="4.5" fill="none" stroke="currentColor" stroke-width="1.5"></circle>
+      <path d="M10.5 10.5 14 14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
+      ></path>
+    </svg>
+    <input
+      class="palette__input"
+      id="palette-q"
+      type="text"
+      role="combobox"
+      aria-expanded="true"
+      aria-controls="palette-list"
+      aria-autocomplete="list"
+      aria-label={t('palette.open')}
+      autocomplete="off"
+      spellcheck="false"
+      placeholder={t('palette.placeholder')}
+    />
+    <button class="palette__close" type="button" data-palette-close aria-label={t('palette.close')}>
+      <svg aria-hidden="true" width="12" height="12" viewBox="0 0 12 12">
+        <path d="M2 2l8 8M10 2l-8 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
+        ></path>
+      </svg>
+    </button>
+  </div>
+
+  <div class="palette__list" id="palette-list" role="listbox" aria-label={t('palette.label')}>
+    <div class="palette__group" role="group" aria-labelledby="palette-g-nav" data-group="nav">
+      <p class="palette__glabel" id="palette-g-nav">{t('palette.navLabel')}</p>
+      {
+        navItems.map((item, i) => (
+          <a class="palette__option" role="option" id={`po-nav-${i}`} href={item.href}>
+            <span class="palette__opt-label">{item.label}</span>
+          </a>
+        ))
+      }
+      <a class="palette__option" role="option" id="po-lang" href={langHref} lang={other}>
+        <span class="palette__opt-label">{t('lang.switch')}</span>
+        <span class="palette__opt-note" lang={other}>{languages[other]}</span>
+      </a>
+    </div>
+
+    <div
+      class="palette__group"
+      role="group"
+      aria-labelledby="palette-g-res"
+      data-group="results"
+      hidden
+    >
+      <p class="palette__glabel" id="palette-g-res">{t('palette.results')}</p>
+      <template data-hit-template>
+        <a class="palette__option palette__option--hit" role="option" href="">
+          <span class="palette__opt-label"></span>
+          <span class="palette__opt-excerpt"></span>
+        </a>
+      </template>
+    </div>
+  </div>
+
+  <footer class="palette__foot">
+    <span class="palette__hint ltr">{t('palette.hint')}</span>
+    <a class="palette__all" data-palette-all href={getRelativeLocaleUrl(lang, sectionPaths.search)}>
+      {t('palette.allResults')}
+    </a>
+  </footer>
+</dialog>
+
+<script>
+  interface PaletteCfg {
+    nav: { href: string; label: string }[];
+    langHref: string;
+    strings: { searching: string; results: string; empty: string; error: string };
+    kbd: { mac: string; other: string };
+  }
+
+  interface PagefindResultData {
+    url: string;
+    /** Pagefind-sanitized markup containing <mark> — the only innerHTML sink. */
+    excerpt: string;
+    meta?: { title?: string };
+  }
+
+  interface PagefindModule {
+    search(query: string): Promise<{ results: { data: () => Promise<PagefindResultData> }[] }>;
+  }
+
+  const dialog = document.getElementById('cmdk') as HTMLDialogElement | null;
+
+  if (dialog) {
+    const cfg = JSON.parse(dialog.dataset.palette ?? '{}') as PaletteCfg;
+    const input = dialog.querySelector<HTMLInputElement>('#palette-q')!;
+    const navGroup = dialog.querySelector<HTMLElement>('[data-group="nav"]')!;
+    const resGroup = dialog.querySelector<HTMLElement>('[data-group="results"]')!;
+    const resLabel = resGroup.querySelector<HTMLElement>('#palette-g-res')!;
+    const template = resGroup.querySelector<HTMLTemplateElement>('[data-hit-template]')!;
+    const allLink = dialog.querySelector<HTMLAnchorElement>('[data-palette-all]')!;
+    const allBase = allLink.getAttribute('href') ?? '';
+
+    // Platform-correct shortcut hint for every trigger on the page.
+    const isMac = /mac|iphone|ipad|ipod/i.test(navigator.userAgent);
+    for (const kbd of document.querySelectorAll<HTMLElement>('[data-palette-kbd]')) {
+      kbd.textContent = isMac ? cfg.kbd.mac : cfg.kbd.other;
+    }
+
+    const options = (): HTMLAnchorElement[] =>
+      [...dialog.querySelectorAll<HTMLAnchorElement>('[role="option"]')].filter(
+        (o) => !o.closest('[hidden]')
+      );
+
+    let active = -1;
+    const setActive = (idx: number) => {
+      const opts = options();
+      for (const o of opts) {
+        o.classList.remove('is-active');
+        o.removeAttribute('aria-selected');
+      }
+      if (opts.length === 0) {
+        active = -1;
+        input.removeAttribute('aria-activedescendant');
+        return;
+      }
+      active = ((idx % opts.length) + opts.length) % opts.length;
+      const current = opts[active];
+      current.classList.add('is-active');
+      current.setAttribute('aria-selected', 'true');
+      current.scrollIntoView({ block: 'nearest' });
+      input.setAttribute('aria-activedescendant', current.id);
+    };
+
+    let seq = 0;
+    let timer = 0;
+
+    const reset = () => {
+      seq++;
+      window.clearTimeout(timer);
+      navGroup.hidden = false;
+      resGroup.hidden = true;
+      for (const o of resGroup.querySelectorAll('[role="option"]')) o.remove();
+      allLink.setAttribute('href', allBase);
+      setActive(-1);
+    };
+
+    // Pagefind is only fetched on intent: typing in the palette. Never at
+    // page load, never preloaded — the 15KB article budget stays intact.
+    let pagefind: PagefindModule | null = null;
+    const loadPagefind = async (): Promise<PagefindModule | null> => {
+      if (pagefind) return pagefind;
+      try {
+        // The bundle only exists in dist/ after the post-build pagefind step.
+        // Runtime-only specifier — a static import would break `astro build`.
+        const path = '/pagefind/pagefind.js';
+        pagefind = (await import(/* @vite-ignore */ path)) as PagefindModule;
+        return pagefind;
+      } catch {
+        return null;
+      }
+    };
+
+    const search = async (query: string) => {
+      const id = ++seq;
+      resLabel.textContent = cfg.strings.searching;
+      const mod = await loadPagefind();
+      if (id !== seq) return;
+      if (!mod) {
+        resLabel.textContent = cfg.strings.error;
+        return;
+      }
+      const res = await mod.search(query);
+      if (id !== seq) return;
+      const rows = await Promise.all(res.results.slice(0, 6).map((r) => r.data()));
+      if (id !== seq) return;
+      resLabel.textContent = rows.length === 0 ? cfg.strings.empty : cfg.strings.results;
+      for (const o of resGroup.querySelectorAll('[role="option"]')) o.remove();
+      rows.forEach((d, i) => {
+        const node = template.content.firstElementChild!.cloneNode(true) as HTMLAnchorElement;
+        node.id = `po-hit-${i}`;
+        node.href = d.url;
+        const title = node.querySelector<HTMLElement>('.palette__opt-label')!;
+        const excerpt = node.querySelector<HTMLElement>('.palette__opt-excerpt')!;
+        // meta values are raw — textContent; only the sanitized excerpt uses
+        // innerHTML for its <mark> markup.
+        title.textContent = d.meta?.title ?? d.url;
+        excerpt.innerHTML = d.excerpt;
+        resGroup.append(node);
+      });
+      setActive(-1);
+    };
+
+    input.addEventListener('input', () => {
+      const q = input.value.trim();
+      if (q.length < 2) {
+        reset();
+        return;
+      }
+      navGroup.hidden = true;
+      resGroup.hidden = false;
+      allLink.setAttribute('href', `${allBase}?q=${encodeURIComponent(q)}`);
+      setActive(-1);
+      window.clearTimeout(timer);
+      timer = window.setTimeout(() => void search(q), 180);
+    });
+
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        setActive(active + 1);
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        setActive(active - 1);
+      } else if (e.key === 'Enter') {
+        e.preventDefault();
+        const target = options()[active] ?? options()[0];
+        target?.click();
+      }
+    });
+
+    let lastFocus: HTMLElement | null = null;
+    const open = () => {
+      if (dialog.open) return;
+      lastFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+      dialog.showModal();
+      input.focus();
+    };
+
+    dialog.addEventListener('close', () => {
+      input.value = '';
+      reset();
+      lastFocus?.focus();
+    });
+
+    document.addEventListener('click', (e) => {
+      const target = e.target instanceof Element ? e.target : null;
+      if (target?.closest('[data-palette-open]')) {
+        e.preventDefault();
+        open();
+      } else if (target?.closest('[data-palette-close]')) {
+        dialog.close();
+      }
+    });
+
+    window.addEventListener('keydown', (e) => {
+      if (!(e.metaKey || e.ctrlKey) || e.altKey || e.key.toLowerCase() !== 'k') return;
+      // Never hijack the shortcut while the visitor is typing elsewhere.
+      const el = e.target instanceof Element ? e.target : null;
+      if (el?.closest('input, textarea, select, [contenteditable]')) return;
+      e.preventDefault();
+      open();
+    });
+  }
+</script>
+
+<style>
+  .palette {
+    margin: auto;
+    padding: 0;
+    width: min(calc(100vw - var(--space-5)), var(--palette-width));
+    max-height: calc(100dvh - var(--space-7));
+    display: flex;
+    flex-direction: column;
+    background: var(--ink-800);
+    color: var(--text);
+    border: var(--hairline) solid var(--ink-600);
+    border-radius: var(--radius);
+  }
+
+  .palette::backdrop {
+    background: color-mix(in srgb, var(--ink-900) 82%, transparent);
+  }
+
+  .palette__head {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-2) var(--space-4);
+    border-block-end: var(--hairline) solid var(--line);
+  }
+
+  .palette__icon {
+    color: var(--text-dim);
+    flex: none;
+  }
+
+  .palette__input {
+    flex: 1;
+    min-width: 0;
+    min-height: var(--touch-min);
+    background: none;
+    border: none;
+    color: var(--text-hi);
+    font-family: var(--f-body);
+    font-size: var(--step-0);
+  }
+
+  html[lang='ar'] .palette__input {
+    font-family: var(--f-body-ar);
+    line-height: var(--lh-ar);
+  }
+
+  .palette__input::placeholder {
+    color: var(--text-dim);
+  }
+
+  .palette__close {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    min-block-size: var(--touch-min);
+    min-inline-size: var(--touch-min);
+    background: none;
+    border: none;
+    border-radius: var(--radius);
+    color: var(--text-dim);
+    cursor: pointer;
+  }
+
+  .palette__close:hover {
+    color: var(--text-hi);
+  }
+
+  .palette__list {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: var(--space-2);
+  }
+
+  .palette__glabel {
+    margin: 0;
+    padding: var(--space-2) var(--space-3);
+    font-family: var(--f-cond);
+    font-size: var(--text-2xs);
+    text-transform: uppercase;
+    letter-spacing: var(--ls-label);
+    color: var(--text-dim);
+  }
+
+  html[lang='ar'] .palette__glabel {
+    font-family: var(--f-body-ar);
+    text-transform: none;
+    letter-spacing: 0;
+  }
+
+  .palette__option {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    min-height: var(--touch-min);
+    padding: var(--space-3);
+    text-decoration: none;
+    border-radius: var(--radius);
+    color: var(--text-lo);
+    transition:
+      background var(--t-fast) ease,
+      color var(--t-fast) ease;
+  }
+
+  .palette__option:hover,
+  .palette__option.is-active {
+    background: var(--ink-700);
+    color: var(--text-hi);
+  }
+
+  .palette__opt-label {
+    font-family: var(--f-display);
+    font-size: var(--step--1);
+    font-weight: 600;
+    letter-spacing: var(--ls-display);
+    color: var(--text-hi);
+    line-height: var(--lh-body);
+  }
+
+  html[lang='ar'] .palette__opt-label {
+    font-family: var(--f-body-ar);
+    letter-spacing: 0;
+    line-height: var(--lh-ar);
+  }
+
+  .palette__opt-note {
+    font-size: var(--text-sm);
+    color: var(--text-lo);
+  }
+
+  .palette__opt-excerpt {
+    font-size: var(--text-sm);
+    color: var(--text-lo);
+    line-height: var(--lh-body);
+  }
+
+  html[lang='ar'] .palette__opt-excerpt {
+    line-height: var(--lh-ar);
+  }
+
+  .palette__opt-excerpt :global(mark) {
+    background: var(--sulfur-900);
+    color: var(--sulfur-300);
+  }
+
+  .palette__foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    padding: var(--space-2) var(--space-4);
+    border-block-start: var(--hairline) solid var(--line);
+  }
+
+  .palette__hint {
+    font-family: var(--f-code);
+    font-size: var(--text-2xs);
+    color: var(--text-dim);
+  }
+
+  html[lang='ar'] .palette__hint {
+    font-family: var(--f-body-ar);
+  }
+
+  .palette__all {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--touch-min);
+    font-family: var(--f-cond);
+    font-size: var(--text-xs);
+    text-transform: uppercase;
+    letter-spacing: var(--ls-label);
+    color: var(--blue-400);
+    text-decoration: none;
+    border-block-end: var(--hairline) solid transparent;
+  }
+
+  html[lang='ar'] .palette__all {
+    font-family: var(--f-body-ar);
+    text-transform: none;
+    letter-spacing: 0;
+  }
+
+  .palette__all:hover {
+    color: var(--sulfur-300);
+    border-block-end-color: var(--sulfur-400);
+  }
+</style>

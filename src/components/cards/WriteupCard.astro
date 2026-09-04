@@ -36,16 +36,20 @@ const href = getRelativeLocaleUrl(lang, `/writeups/${slug}`);
   </div>
   <h3 class="case__title">{data.title}</h3>
   <div class="case__meta ltr">
-    {data.cwe.length > 0 && (
-      <span>
-        <span class="k">CWE</span> {data.cwe.join(', ')}
-      </span>
-    )}
-    {data.owasp.length > 0 && (
-      <span>
-        <span class="k">OWASP</span> {data.owasp.join(' · ')}
-      </span>
-    )}
+    {
+      data.cwe.length > 0 && (
+        <span>
+          <span class="k">CWE</span> {data.cwe.join(', ')}
+        </span>
+      )
+    }
+    {
+      data.owasp.length > 0 && (
+        <span>
+          <span class="k">OWASP</span> {data.owasp.join(' · ')}
+        </span>
+      )
+    }
     <span>{data.targetType}</span>
     <span>{reading}</span>
     {data.hasFix && <span class="case__fix">{t('case.fix')}</span>}

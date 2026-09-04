@@ -1,6 +1,5 @@
 ---
-import { getRelativeLocaleUrl } from 'astro:i18n';
-import { useTranslations } from '../../i18n/utils';
+import { localeHrefs, useTranslations } from '../../i18n/utils';
 import type { Language } from '../../i18n/ui';
 
 interface Props {
@@ -11,14 +10,7 @@ const { lang } = Astro.props;
 const t = useTranslations(lang);
 
 // Keep the visitor on the same page when switching language (AGENT-KICKOFF §1).
-const currentPath = Astro.url.pathname
-  .replace(/\/$/, '')
-  .replace(new RegExp(`^/${lang}(?=/|$)`), '');
-
-const pathArg = currentPath.length > 0 ? currentPath.slice(1) : undefined;
-
-const enHref = getRelativeLocaleUrl('en', pathArg);
-const arHref = getRelativeLocaleUrl('ar', pathArg);
+const { en: enHref, ar: arHref } = localeHrefs(Astro.url.pathname);
 
 const isAr = lang === 'ar';
 ---

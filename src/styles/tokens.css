@@ -69,6 +69,7 @@
   --rule-thickness: 2px;
   --touch-min: 44px;
   --grid-size: 88px;
+  --palette-width: 560px;
 
   /* ── Component padding (fluid, blueprint rhythm) ── */
   --pad-wrap-inline: clamp(1.1rem, 4vw, 2.5rem);
