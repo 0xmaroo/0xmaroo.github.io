@@ -34,6 +34,12 @@ export default defineConfig({
   vite: {
     build: {
       assetsInlineLimit: 0,
+      // One stylesheet instead of one per component. With inlining disabled for
+      // the CSP, each split chunk became its own render-blocking request —
+      // Lighthouse measured ~1.35s of blocking on a mobile article page across
+      // five files. Bundling trades a slightly larger first payload for a single
+      // round trip, and stays `style-src 'self'`.
+      cssCodeSplit: false,
     },
   },
   integrations: [
