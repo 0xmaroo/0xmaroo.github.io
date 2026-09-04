@@ -1,0 +1,327 @@
+---
+import { getRelativeLocaleUrl } from 'astro:i18n';
+import { useTranslations } from '../../i18n/utils';
+import type { Language } from '../../i18n/ui';
+
+interface Props {
+  lang: Language;
+}
+
+const { lang } = Astro.props;
+const t = useTranslations(lang);
+
+// Handed to the client script as JSON — the script itself holds no copy.
+const strings = {
+  searching: t('search.searching'),
+  results: t('search.results'),
+  empty: t('search.empty'),
+  error: t('search.error'),
+};
+const archiveHref = getRelativeLocaleUrl(lang, '/writeups');
+---
+
+<section class="search" data-search={JSON.stringify({ strings })}>
+  <form class="search__form" role="search">
+    <label class="search__label" for="search-q">{t('search.label')}</label>
+    <input
+      class="search__input"
+      id="search-q"
+      type="search"
+      name="q"
+      autocomplete="off"
+      placeholder={t('search.placeholder')}
+    />
+  </form>
+
+  <noscript>
+    <p class="search__noscript">
+      {t('search.noscript')}
+      <a href={archiveHref}>{t('writeups.title')}</a>
+    </p>
+  </noscript>
+
+  <p class="search__status" role="status" aria-live="polite"></p>
+
+  <ul class="search__results" data-search-results></ul>
+
+  <!-- Result row skeleton. Cloned per hit so Astro's scoped styles (which the
+       JS-created nodes would otherwise not carry) apply to every clone. -->
+  <template data-hit-template>
+    <li>
+      <a class="hit" href="">
+        <span class="hit__meta ltr"></span>
+        <span class="hit__title"></span>
+        <span class="hit__excerpt"></span>
+        <span class="hit__url ltr"></span>
+      </a>
+    </li>
+  </template>
+</section>
+
+<script>
+  interface SearchStrings {
+    searching: string;
+    results: string;
+    empty: string;
+    error: string;
+  }
+
+  interface PagefindResultData {
+    url: string;
+    /** Pagefind-sanitized markup containing <mark> — the only innerHTML sink. */
+    excerpt: string;
+    meta?: { title?: string };
+    filters?: { category?: string[] };
+  }
+
+  interface PagefindModule {
+    search(query: string): Promise<{ results: { data: () => Promise<PagefindResultData> }[] }>;
+  }
+
+  const root = document.querySelector<HTMLElement>('[data-search]');
+  const form = root?.querySelector<HTMLFormElement>('.search__form');
+  const input = root?.querySelector<HTMLInputElement>('#search-q');
+  const status = root?.querySelector<HTMLElement>('.search__status');
+  const list = root?.querySelector<HTMLUListElement>('[data-search-results]');
+  const template = root?.querySelector<HTMLTemplateElement>('[data-hit-template]');
+
+  if (root && form && input && status && list && template) {
+    const strings = (JSON.parse(root.dataset.search ?? '{}') as { strings: SearchStrings }).strings;
+    const DEBOUNCE_MS = 180;
+    const MAX_RESULTS = 20;
+
+    let pagefind: PagefindModule | null = null;
+    const loadPagefind = async (): Promise<PagefindModule | null> => {
+      if (pagefind) return pagefind;
+      try {
+        // The bundle only exists in dist/ after the post-build pagefind step.
+        // Runtime-only specifier — a static import would break `astro build`.
+        const path = '/pagefind/pagefind.js';
+        pagefind = (await import(/* @vite-ignore */ path)) as PagefindModule;
+        return pagefind;
+      } catch {
+        return null;
+      }
+    };
+
+    let seq = 0;
+    let timer = 0;
+
+    const render = (rows: PagefindResultData[]) => {
+      list.textContent = '';
+      for (const d of rows) {
+        const node = template.content.firstElementChild!.cloneNode(true) as HTMLLIElement;
+        const anchor = node.querySelector<HTMLAnchorElement>('.hit')!;
+        const meta = node.querySelector<HTMLElement>('.hit__meta')!;
+        const title = node.querySelector<HTMLElement>('.hit__title')!;
+        const excerpt = node.querySelector<HTMLElement>('.hit__excerpt')!;
+        const url = node.querySelector<HTMLElement>('.hit__url')!;
+        anchor.href = d.url;
+        const categories = d.filters?.category ?? [];
+        if (categories.length > 0) {
+          meta.textContent = categories.join(' · ');
+        } else {
+          meta.remove();
+        }
+        // meta values are raw text — textContent everywhere except the
+        // sanitized excerpt, which needs its <mark> markup.
+        title.textContent = d.meta?.title ?? d.url;
+        excerpt.innerHTML = d.excerpt;
+        url.textContent = d.url;
+        list.append(node);
+      }
+    };
+
+    const run = async (query: string) => {
+      const id = ++seq;
+      const q = query.trim();
+      if (q.length === 0) {
+        list.textContent = '';
+        status.textContent = '';
+        return;
+      }
+      status.textContent = strings.searching;
+      const mod = await loadPagefind();
+      if (id !== seq) return;
+      if (!mod) {
+        status.textContent = strings.error;
+        return;
+      }
+      const res = await mod.search(q);
+      const rows = await Promise.all(res.results.slice(0, MAX_RESULTS).map((r) => r.data()));
+      if (id !== seq) return;
+      render(rows);
+      status.textContent =
+        rows.length === 0 ? strings.empty : strings.results.replace('{0}', String(rows.length));
+    };
+
+    const syncUrl = (q: string) => {
+      const search = q.trim().length > 0 ? `?q=${encodeURIComponent(q.trim())}` : '';
+      history.replaceState(null, '', `${location.pathname}${search}`);
+    };
+
+    form.addEventListener('submit', (e) => {
+      // With JS on, the form never navigates; Enter just runs the query now.
+      e.preventDefault();
+      window.clearTimeout(timer);
+      syncUrl(input.value);
+      void run(input.value);
+    });
+
+    input.addEventListener('input', () => {
+      window.clearTimeout(timer);
+      timer = window.setTimeout(() => {
+        syncUrl(input.value);
+        void run(input.value);
+      }, DEBOUNCE_MS);
+    });
+
+    // A shared URL must search on arrival.
+    const initial = new URLSearchParams(location.search).get('q');
+    if (initial) {
+      input.value = initial;
+      void run(initial);
+    }
+  }
+</script>
+
+<style>
+  .search__form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    margin-block-start: var(--space-6);
+  }
+
+  .search__label {
+    font-family: var(--f-cond);
+    font-size: var(--text-xs);
+    text-transform: uppercase;
+    letter-spacing: var(--ls-label);
+    color: var(--blue-400);
+  }
+
+  html[lang='ar'] .search__label {
+    font-family: var(--f-body-ar);
+    text-transform: none;
+    letter-spacing: 0;
+  }
+
+  .search__input {
+    width: 100%;
+    min-height: var(--touch-min);
+    padding: var(--space-3) var(--space-4);
+    background: var(--ink-800);
+    border: var(--hairline) solid var(--ink-600);
+    border-radius: var(--radius);
+    color: var(--text-hi);
+    font-family: var(--f-body);
+    font-size: var(--step-1);
+  }
+
+  html[lang='ar'] .search__input {
+    font-family: var(--f-body-ar);
+    line-height: var(--lh-ar);
+  }
+
+  .search__input::placeholder {
+    color: var(--text-dim);
+  }
+
+  .search__noscript {
+    margin-block-start: var(--space-5);
+    padding: var(--space-4);
+    border: var(--hairline) solid var(--ink-600);
+    background: var(--ink-800);
+    color: var(--text-lo);
+    max-width: var(--measure-lead);
+  }
+
+  .search__noscript a {
+    color: var(--sulfur-300);
+  }
+
+  .search__status {
+    margin-block-start: var(--space-5);
+    min-height: var(--space-5);
+    font-family: var(--f-code);
+    font-size: var(--text-xs);
+    color: var(--text-dim);
+  }
+
+  html[lang='ar'] .search__status {
+    font-family: var(--f-body-ar);
+  }
+
+  .search__results {
+    margin-block-start: var(--space-4);
+    padding: 0;
+    list-style: none;
+    display: grid;
+    gap: var(--hairline);
+    background: var(--line);
+    border: var(--hairline) solid var(--line);
+  }
+
+  /* ── Case-file hit row (compact WriteupCard sibling) ── */
+  .hit {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    padding: var(--space-4) var(--space-5);
+    background: var(--ink-900);
+    text-decoration: none;
+    transition: background var(--t-fast) ease;
+  }
+
+  .hit:hover {
+    background: var(--ink-800);
+  }
+
+  .hit__meta {
+    font-family: var(--f-code);
+    font-size: var(--text-xs);
+    color: var(--blue-400);
+    letter-spacing: var(--ls-meta);
+  }
+
+  .hit__title {
+    font-family: var(--f-display);
+    font-size: var(--step-0);
+    font-weight: 600;
+    letter-spacing: var(--ls-display);
+    color: var(--text-hi);
+    line-height: var(--lh-body);
+  }
+
+  html[lang='ar'] .hit__title {
+    font-family: var(--f-body-ar);
+    letter-spacing: 0;
+    line-height: var(--lh-ar);
+  }
+
+  .hit:hover .hit__title {
+    color: var(--sulfur-300);
+  }
+
+  .hit__excerpt {
+    font-size: var(--step--1);
+    color: var(--text-lo);
+    line-height: var(--lh-body);
+  }
+
+  html[lang='ar'] .hit__excerpt {
+    line-height: var(--lh-ar);
+  }
+
+  .hit__excerpt :global(mark) {
+    background: var(--sulfur-900);
+    color: var(--sulfur-300);
+  }
+
+  .hit__url {
+    font-family: var(--f-code);
+    font-size: var(--text-2xs);
+    color: var(--text-dim);
+  }
+</style>

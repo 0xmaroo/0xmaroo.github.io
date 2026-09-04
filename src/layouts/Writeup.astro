@@ -102,8 +102,10 @@ const jsonLd = {
 
   <article class="writeup">
     <header class="wrap writeup__head">
-      <p class="writeup__eyebrow ltr">{data.category.toUpperCase()} · {slug}</p>
-      <h1 class="writeup__title">{data.title}</h1>
+      <p class="writeup__eyebrow ltr">
+        <span data-pagefind-filter="category">{data.category.toUpperCase()}</span> · {slug}
+      </p>
+      <h1 class="writeup__title" data-pagefind-meta="title">{data.title}</h1>
       <p class="writeup__summary">{data.summary}</p>
 
       <div class="writeup__meta">

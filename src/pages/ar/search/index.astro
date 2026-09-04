@@ -1,0 +1,50 @@
+---
+import Base from '../../../layouts/Base.astro';
+import Seo from '../../../components/Seo.astro';
+import SearchPanel from '../../../components/search/SearchPanel.astro';
+import { useTranslations } from '../../../i18n/utils';
+
+const lang = 'ar';
+const t = useTranslations(lang);
+---
+
+<Base lang={lang} title={`${t('search.title')} — 0xMARO`} description={t('search.desc')}>
+  <Seo
+    slot="head"
+    lang={lang}
+    path="/search"
+    robots="noindex"
+    title={`${t('search.title')} — 0xMARO`}
+    description={t('search.desc')}
+  />
+  <div class="wrap search-page">
+    <header class="search-page__head">
+      <h1 class="search-page__title">{t('search.title')}</h1>
+      <p class="search-page__desc">{t('search.desc')}</p>
+    </header>
+    <SearchPanel lang={lang} />
+  </div>
+</Base>
+
+<style>
+  .search-page {
+    padding-block: var(--space-7) var(--space-8);
+  }
+
+  .search-page__head {
+    border-block-end: var(--hairline) solid var(--line);
+    padding-block-end: var(--space-6);
+  }
+
+  .search-page__desc {
+    margin-block-start: var(--space-4);
+    max-width: var(--measure-lead);
+    font-size: var(--step-1);
+    color: var(--text-lo);
+    line-height: var(--lh-lead);
+  }
+
+  html[lang='ar'] .search-page__desc {
+    line-height: var(--lh-ar);
+  }
+</style>

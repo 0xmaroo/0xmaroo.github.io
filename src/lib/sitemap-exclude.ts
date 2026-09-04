@@ -59,7 +59,7 @@ export async function registerSitemapExclusions(): Promise<void> {
 }
 
 /** Static noindex routes that must never be listed (plan/08 §8.6). */
-const staticExcluded = new Set(['/404', '/ar/404']);
+const staticExcluded = new Set(['/404', '/ar/404', '/search', '/ar/search']);
 
 /** Sync check used by the sitemap `filter` at astro:build:done. */
 export function isSitemapExcluded(url: string): boolean {
