@@ -138,24 +138,14 @@ const frame = (lang: Language): El => {
       },
       [el('span', {}, '0x'), el('span', { color: C.sulfur400 }, 'MARO')]
     ),
-    el(
-      'div',
-      {
-        display: 'flex',
-        direction: isAr ? 'rtl' : 'ltr',
-        flexDirection: 'column',
-        fontFamily: 'Body',
-        fontWeight: isAr ? 500 : 600,
-        fontSize: SUB_FONT,
-        lineHeight: isAr ? 1.85 : 1.5,
-        color: C.textLo,
-        textAlign: isAr ? 'right' : 'left',
-        maxWidth: SUB_WRAP,
-      },
-      wrapLines(t['hero.sub'], isAr ? SUB_MAX_CHARS_AR : SUB_MAX_CHARS).map((l) =>
-        el('div', { display: 'flex' }, forLang(l, lang))
-      )
-    ),
+    textFlow(t['hero.sub'], lang, SUB_FONT, {
+      fontFamily: 'Body',
+      fontWeight: isAr ? 500 : 600,
+      fontSize: SUB_FONT,
+      lineHeight: isAr ? 1.85 : 1.5,
+      color: C.textLo,
+      maxWidth: SUB_WRAP,
+    }),
   ]);
 
   const corner = el('div', {
@@ -244,21 +234,16 @@ export interface EntryOg {
 }
 
 const TITLE_FONT = 64;
-const TITLE_MAX_LINES = 3;
 // Wrap width reserves the corner where the brand mark sits, so a full
 // three-line title can never run under it.
 const BRAND_RESERVE = 200;
 const TITLE_WRAP = W - PAD * 2 - BRAND_RESERVE;
 // Average advance width of the Plex faces at semibold; satori has no
 // measurement API, so wrapping is cut by estimate and hard-capped.
-const TITLE_CHAR_WIDTH = 0.55;
 
 /** Default-frame lead paragraph metrics (same char-width heuristic). */
 const SUB_FONT = 30;
 const SUB_WRAP = 660;
-const SUB_MAX_CHARS = Math.floor(SUB_WRAP / (SUB_FONT * TITLE_CHAR_WIDTH));
-/** Arabic glyphs run wider than the Latin heuristic at the same size. */
-const SUB_MAX_CHARS_AR = Math.floor(SUB_WRAP / (SUB_FONT * 0.72));
 
 /**
  * Deterministic word wrap: a title can never exceed TITLE_MAX_LINES, and a
@@ -266,110 +251,71 @@ const SUB_MAX_CHARS_AR = Math.floor(SUB_WRAP / (SUB_FONT * 0.72));
  * frame (and the brand mark) is never overrun.
  */
 /**
- * Visual reordering for satori — the OG renderer, not the site.
+ * Arabic text layout for satori — flow, not measurement.
  *
- * satori (0.12) shapes Arabic glyphs correctly (letters join) but does NOT run
- * the bidi algorithm at paragraph level: it places whitespace-separated tokens
- * left-to-right, so a multi-word Arabic sentence comes out with its words in
- * reverse reading order. It showed as scrambled copy on `og-default-ar.png` and
- * would hit every future Arabic writeup title.
+ * satori (0.12) does not run the bidi algorithm. It shapes Arabic glyphs
+ * correctly (letters join) but places whitespace-separated tokens
+ * left-to-right, so a multi-word Arabic sentence renders with its words in
+ * reverse reading order. og-default-ar.png shipped that way.
  *
- * This is a reduced UAX#9 pass, enough for the strings this site renders:
- * group consecutive tokens into runs by direction, reverse the run ORDER, and
- * reverse token order inside RTL runs only — so a Latin run ("SQL Injection",
- * "CVE-2021-44228") keeps reading left-to-right inside an Arabic sentence,
- * which plan/03 §3.2 rule 5 requires.
+ * Reordering by hand only moves the problem: you then have to predict where
+ * satori will break the line, and you cannot — it resolves U+0020 against an
+ * arbitrary registered face and draws it far wider than the Arabic font's own
+ * space, so any width model drifts (measured: a 629px line rendering at ~730px).
+ * An under-measured line is silently re-wrapped by satori AFTER the reordering,
+ * which scatters the words again.
  *
- * Apply per already-wrapped LINE, never to a whole paragraph, and only for
- * `lang === 'ar'`. Latin-only strings (the brand, the case eyebrow) must not
- * pass through it.
+ * So no reordering and no measuring. Each word becomes a box and flex is asked
+ * to flow them: `row-reverse` + `wrap` fills from the right and breaks onto the
+ * next line, which IS Arabic text flow. Words are emitted in logical order and
+ * the gap is ours, so there is nothing to calibrate and nothing to drift.
+ *
+ * Mixed content (plan/03 §3.2 rule 5 — "ثغرة SQL Injection في CVE-2021-44228")
+ * works because a run of consecutive Latin tokens is emitted as ONE box with its
+ * spaces intact: it stays internally left-to-right and the reversed flow places
+ * it as a single unit.
  */
 const RTL_CHAR = /[\u0600-\u06FF\u0750-\u077F\uFB50-\uFDFF\uFE70-\uFEFF]/;
 
-const bidiVisual = (text: string): string => {
-  const runs: { rtl: boolean; words: string[] }[] = [];
-  for (const word of text.split(/\s+/).filter(Boolean)) {
-    const rtl = RTL_CHAR.test(word);
-    const last = runs[runs.length - 1];
-    if (last && last.rtl === rtl) last.words.push(word);
-    else runs.push({ rtl, words: [word] });
-  }
-  return runs
-    .reverse()
-    .map((run) => (run.rtl ? [...run.words].reverse() : run.words).join(' '))
-    .join(' ');
-};
-
-/** Reorder only when the target language is Arabic. */
-const forLang = (text: string, lang: Language): string => (lang === 'ar' ? bidiVisual(text) : text);
+/** Gap between word boxes, in em — satori's own space glyph is unusable here. */
+const WORD_GAP = 0.28;
 
 /**
- * Greedy word wrap with no truncation. Needed because a paragraph that satori
- * wraps itself cannot be bidi-reordered: reversing the whole string and then
- * letting satori break it puts the wrong words on each line. Wrap first
- * (logical order), reorder each line after.
+ * Arabic words individually, so a line may break between them; each run of
+ * Latin tokens kept whole, so it stays left-to-right and never splits.
  */
-const wrapLines = (text: string, maxChars: number): string[] => {
-  const lines: string[] = [];
-  let line = '';
-  for (const word of text.split(/\s+/).filter(Boolean)) {
-    const next = line ? `${line} ${word}` : word;
-    if (next.length <= maxChars || !line) line = next;
-    else {
-      lines.push(line);
-      line = word;
+const textBoxes = (text: string, lang: Language): string[] => {
+  const words = text.split(/\s+/).filter(Boolean);
+  if (lang !== 'ar') return words;
+  const boxes: string[] = [];
+  for (const word of words) {
+    const prev = boxes[boxes.length - 1];
+    if (!RTL_CHAR.test(word) && prev !== undefined && !RTL_CHAR.test(prev)) {
+      boxes[boxes.length - 1] = `${prev} ${word}`;
+    } else {
+      boxes.push(word);
     }
   }
-  if (line) lines.push(line);
-  return lines;
+  return boxes;
 };
 
-const wrapTitle = (title: string): string[] => {
-  const maxChars = Math.floor(TITLE_WRAP / (TITLE_FONT * TITLE_CHAR_WIDTH));
-  const cut = (word: string): string => `${word.slice(0, maxChars - 1)}…`;
-  const lines: string[] = [];
-  let line = '';
-  let truncated = false;
+/** A block of flowing text. Callers pass type styling; direction is handled here. */
+const textFlow = (text: string, lang: Language, size: number, style: Record<string, unknown>): El =>
+  el(
+    'div',
+    {
+      display: 'flex',
+      flexWrap: 'wrap',
+      flexDirection: lang === 'ar' ? 'row-reverse' : 'row',
+      alignItems: 'baseline',
+      columnGap: WORD_GAP * size,
+      ...style,
+    },
+    textBoxes(text, lang).map((w) => el('div', { display: 'flex', flexShrink: 0 }, w))
+  );
 
-  for (const word of title.split(/\s+/)) {
-    const next = line ? `${line} ${word}` : word;
-    if (next.length <= maxChars) {
-      line = next;
-      continue;
-    }
-    // `word` has to start a new line — when the current one is the last
-    // slot, the title is truncated here on a word boundary.
-    if (lines.length === TITLE_MAX_LINES - 1) {
-      truncated = true;
-      break;
-    }
-    if (!line) {
-      line = cut(word);
-      continue;
-    }
-    lines.push(line);
-    line = word.length > maxChars ? cut(word) : word;
-  }
-  lines.push(line);
-  if (truncated && !lines[TITLE_MAX_LINES - 1].endsWith('…')) {
-    lines[TITLE_MAX_LINES - 1] += '…';
-  }
-  return lines;
-};
-
-/**
- * The entry variant of the blueprint frame: eyebrow, wrapped title, meta.
- *
- * Positioning uses physical properties (`left`/`right`/`borderLeft`…), mirrored
- * by hand for Arabic: satori (0.12) silently DROPS the logical ones
- * (`insetInlineStart`, `borderInlineStart`, …) and ignores `direction` for
- * layout, so an RTL frame must swap sides explicitly. See the note on
- * `gridLines()` — this is the one place in the codebase where CLAUDE.md rule 1
- * does not apply, because satori is not a browser.
- */
 const entryFrame = (entry: EntryOg): El => {
   const isAr = entry.lang === 'ar';
-  const titleLines = wrapTitle(entry.title);
 
   const column: El[] = [
     el(
@@ -383,38 +329,40 @@ const entryFrame = (entry: EntryOg): El => {
       },
       entry.eyebrow
     ),
-    el(
-      'div',
-      {
-        display: 'flex',
-        flexDirection: 'column',
-        fontFamily: 'Body',
-        fontWeight: isAr ? 500 : 600,
-        fontSize: TITLE_FONT,
-        lineHeight: isAr ? 1.85 : 1.25,
-        color: C.textHi,
-        textAlign: isAr ? 'right' : 'left',
-        maxWidth: TITLE_WRAP,
-      },
-      titleLines.map((l) => el('div', { display: 'flex' }, forLang(l, entry.lang)))
-    ),
+    textFlow(entry.title, entry.lang, TITLE_FONT, {
+      fontFamily: 'Body',
+      fontWeight: isAr ? 500 : 600,
+      fontSize: TITLE_FONT,
+      lineHeight: isAr ? 1.85 : 1.25,
+      color: C.textHi,
+      maxWidth: TITLE_WRAP,
+    }),
   ];
   if (entry.meta) {
     column.push(
-      el(
-        'div',
-        {
-          display: 'flex',
-          fontFamily: entry.meta.technical ? 'Mono' : 'Body',
-          fontWeight: entry.meta.technical ? 400 : isAr ? 500 : 600,
-          fontSize: entry.meta.technical ? 18 : 26,
-          lineHeight: entry.meta.technical ? 1.5 : isAr ? 1.85 : 1.5,
-          color: entry.meta.technical ? C.textLo : C.sulfur400,
-          letterSpacing: entry.meta.technical ? 1 : 0,
-          textAlign: entry.meta.technical || !isAr ? 'left' : 'right',
-        },
-        entry.meta.technical ? entry.meta.text : forLang(entry.meta.text, entry.lang)
-      )
+      entry.meta.technical
+        ? // CWE ids and slugs are identifiers: always mono, always LTR.
+          el(
+            'div',
+            {
+              display: 'flex',
+              fontFamily: 'Mono',
+              fontWeight: 400,
+              fontSize: 18,
+              lineHeight: 1.5,
+              color: C.textLo,
+              letterSpacing: 1,
+            },
+            entry.meta.text
+          )
+        : textFlow(entry.meta.text, entry.lang, 26, {
+            fontFamily: 'Body',
+            fontWeight: isAr ? 500 : 600,
+            fontSize: 26,
+            lineHeight: isAr ? 1.85 : 1.5,
+            color: C.sulfur400,
+            maxWidth: TITLE_WRAP,
+          })
     );
   }
 
