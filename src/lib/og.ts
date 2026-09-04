@@ -69,13 +69,28 @@ const el = (
   props: { style, children },
 });
 
+/**
+ * Blueprint grid behind every OG image.
+ *
+ * PHYSICAL PROPERTIES ARE DELIBERATE HERE. satori (0.12) parses its own subset
+ * of CSS and silently drops logical properties — `insetInlineStart`,
+ * `borderInlineStart`, `borderBlockStart` — leaving the element at its static
+ * position with no border at all. Using them here previously collapsed every
+ * vertical grid line onto the left edge, erased the corner mark, and dropped
+ * the brand line on top of the description text in the default images.
+ *
+ * A full-canvas grid is symmetric, so `left` is correct in both directions.
+ * Anything direction-dependent (corner, brand) mirrors by hand on `isAr`.
+ * Do NOT "fix" this back to logical properties: CLAUDE.md rule 1 governs CSS a
+ * browser parses, and satori is not a browser.
+ */
 const gridLines = (): El[] => {
   const lines: El[] = [];
   for (let x = GRID; x < W; x += GRID) {
     lines.push(
       el('div', {
         position: 'absolute',
-        insetInlineStart: `${x}px`,
+        left: `${x}px`,
         top: 0,
         width: 1,
         height: H,
@@ -88,7 +103,7 @@ const gridLines = (): El[] => {
       el('div', {
         position: 'absolute',
         top: `${y}px`,
-        insetInlineStart: 0,
+        left: 0,
         width: W,
         height: 1,
         background: 'rgba(78,124,246,0.07)',
@@ -128,25 +143,29 @@ const frame = (lang: Language): El => {
       {
         display: 'flex',
         direction: isAr ? 'rtl' : 'ltr',
+        flexDirection: 'column',
         fontFamily: 'Body',
         fontWeight: isAr ? 500 : 600,
-        fontSize: 30,
+        fontSize: SUB_FONT,
         lineHeight: isAr ? 1.85 : 1.5,
         color: C.textLo,
-        maxWidth: 660,
+        textAlign: isAr ? 'right' : 'left',
+        maxWidth: SUB_WRAP,
       },
-      t['hero.sub']
+      wrapLines(t['hero.sub'], isAr ? SUB_MAX_CHARS_AR : SUB_MAX_CHARS).map((l) =>
+        el('div', { display: 'flex' }, forLang(l, lang))
+      )
     ),
   ]);
 
   const corner = el('div', {
     position: 'absolute',
     top: PAD,
-    insetInlineStart: PAD,
+    [isAr ? 'right' : 'left']: PAD,
     width: 28,
     height: 28,
-    borderInlineStart: `2px solid ${C.blue500}`,
-    borderBlockStart: `2px solid ${C.blue500}`,
+    [isAr ? 'borderRight' : 'borderLeft']: `2px solid ${C.blue500}`,
+    borderTop: `2px solid ${C.blue500}`,
   });
 
   const brand = el(
@@ -154,7 +173,7 @@ const frame = (lang: Language): El => {
     {
       position: 'absolute',
       bottom: PAD,
-      insetInlineEnd: PAD,
+      [isAr ? 'left' : 'right']: PAD,
       display: 'flex',
       fontFamily: 'Mono',
       fontSize: 18,
@@ -174,7 +193,7 @@ const frame = (lang: Language): El => {
       position: 'relative',
       background: C.ink900,
       alignItems: 'flex-end',
-      direction: 'ltr',
+      justifyContent: isAr ? 'flex-end' : 'flex-start',
     },
     [...gridLines(), corner, text, brand]
   );
@@ -234,11 +253,77 @@ const TITLE_WRAP = W - PAD * 2 - BRAND_RESERVE;
 // measurement API, so wrapping is cut by estimate and hard-capped.
 const TITLE_CHAR_WIDTH = 0.55;
 
+/** Default-frame lead paragraph metrics (same char-width heuristic). */
+const SUB_FONT = 30;
+const SUB_WRAP = 660;
+const SUB_MAX_CHARS = Math.floor(SUB_WRAP / (SUB_FONT * TITLE_CHAR_WIDTH));
+/** Arabic glyphs run wider than the Latin heuristic at the same size. */
+const SUB_MAX_CHARS_AR = Math.floor(SUB_WRAP / (SUB_FONT * 0.72));
+
 /**
  * Deterministic word wrap: a title can never exceed TITLE_MAX_LINES, and a
  * line that would overflow is cut on a word boundary with an ellipsis, so the
  * frame (and the brand mark) is never overrun.
  */
+/**
+ * Visual reordering for satori — the OG renderer, not the site.
+ *
+ * satori (0.12) shapes Arabic glyphs correctly (letters join) but does NOT run
+ * the bidi algorithm at paragraph level: it places whitespace-separated tokens
+ * left-to-right, so a multi-word Arabic sentence comes out with its words in
+ * reverse reading order. It showed as scrambled copy on `og-default-ar.png` and
+ * would hit every future Arabic writeup title.
+ *
+ * This is a reduced UAX#9 pass, enough for the strings this site renders:
+ * group consecutive tokens into runs by direction, reverse the run ORDER, and
+ * reverse token order inside RTL runs only — so a Latin run ("SQL Injection",
+ * "CVE-2021-44228") keeps reading left-to-right inside an Arabic sentence,
+ * which plan/03 §3.2 rule 5 requires.
+ *
+ * Apply per already-wrapped LINE, never to a whole paragraph, and only for
+ * `lang === 'ar'`. Latin-only strings (the brand, the case eyebrow) must not
+ * pass through it.
+ */
+const RTL_CHAR = /[\u0600-\u06FF\u0750-\u077F\uFB50-\uFDFF\uFE70-\uFEFF]/;
+
+const bidiVisual = (text: string): string => {
+  const runs: { rtl: boolean; words: string[] }[] = [];
+  for (const word of text.split(/\s+/).filter(Boolean)) {
+    const rtl = RTL_CHAR.test(word);
+    const last = runs[runs.length - 1];
+    if (last && last.rtl === rtl) last.words.push(word);
+    else runs.push({ rtl, words: [word] });
+  }
+  return runs
+    .reverse()
+    .map((run) => (run.rtl ? [...run.words].reverse() : run.words).join(' '))
+    .join(' ');
+};
+
+/** Reorder only when the target language is Arabic. */
+const forLang = (text: string, lang: Language): string => (lang === 'ar' ? bidiVisual(text) : text);
+
+/**
+ * Greedy word wrap with no truncation. Needed because a paragraph that satori
+ * wraps itself cannot be bidi-reordered: reversing the whole string and then
+ * letting satori break it puts the wrong words on each line. Wrap first
+ * (logical order), reorder each line after.
+ */
+const wrapLines = (text: string, maxChars: number): string[] => {
+  const lines: string[] = [];
+  let line = '';
+  for (const word of text.split(/\s+/).filter(Boolean)) {
+    const next = line ? `${line} ${word}` : word;
+    if (next.length <= maxChars || !line) line = next;
+    else {
+      lines.push(line);
+      line = word;
+    }
+  }
+  if (line) lines.push(line);
+  return lines;
+};
+
 const wrapTitle = (title: string): string[] => {
   const maxChars = Math.floor(TITLE_WRAP / (TITLE_FONT * TITLE_CHAR_WIDTH));
   const cut = (word: string): string => `${word.slice(0, maxChars - 1)}…`;
@@ -278,9 +363,9 @@ const wrapTitle = (title: string): string[] => {
  * Positioning uses physical properties (`left`/`right`/`borderLeft`…), mirrored
  * by hand for Arabic: satori (0.12) silently DROPS the logical ones
  * (`insetInlineStart`, `borderInlineStart`, …) and ignores `direction` for
- * layout, so an RTL frame must swap sides explicitly. The shared background
- * (`gridLines()`, colours, fonts, sizes) is untouched — the default images
- * keep rendering exactly as before.
+ * layout, so an RTL frame must swap sides explicitly. See the note on
+ * `gridLines()` — this is the one place in the codebase where CLAUDE.md rule 1
+ * does not apply, because satori is not a browser.
  */
 const entryFrame = (entry: EntryOg): El => {
   const isAr = entry.lang === 'ar';
@@ -311,7 +396,7 @@ const entryFrame = (entry: EntryOg): El => {
         textAlign: isAr ? 'right' : 'left',
         maxWidth: TITLE_WRAP,
       },
-      titleLines.map((l) => el('div', { display: 'flex' }, l))
+      titleLines.map((l) => el('div', { display: 'flex' }, forLang(l, entry.lang)))
     ),
   ];
   if (entry.meta) {
@@ -328,7 +413,7 @@ const entryFrame = (entry: EntryOg): El => {
           letterSpacing: entry.meta.technical ? 1 : 0,
           textAlign: entry.meta.technical || !isAr ? 'left' : 'right',
         },
-        entry.meta.text
+        entry.meta.technical ? entry.meta.text : forLang(entry.meta.text, entry.lang)
       )
     );
   }
