@@ -61,7 +61,11 @@ const t = useTranslations(locale);
     };
     copy().then(() => {
       const prev = label.textContent;
-      label.textContent = btn.dataset.copyDone ?? 'Copied';
+      // The label is always supplied from ui.ts via data-copy-done; there is no
+      // English fallback here, because a hardcoded string in a component is a
+      // CLAUDE.md rule 3 violation and would render untranslated on Arabic pages.
+      const done = btn.dataset.copyDone;
+      if (done) label.textContent = done;
       window.setTimeout(() => {
         label.textContent = prev;
       }, 1200);

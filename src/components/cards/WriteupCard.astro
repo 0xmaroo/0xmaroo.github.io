@@ -27,9 +27,16 @@ interface Props {
   facets?: FacetIndex;
   /** Series position (`seriesParts()` in src/lib/content.ts), when in a series. */
   seriesPart?: SeriesPart;
+  /**
+   * Heading level for the card title. Cards sit under a section `<h2>` on the
+   * home page and in the related strip, so 3 is right there; on the archive
+   * they sit directly under the page `<h1>`, where 3 would skip a level.
+   */
+  headingLevel?: 2 | 3;
 }
 
-const { entry, caseNo, facets, seriesPart } = Astro.props;
+const { entry, caseNo, facets, seriesPart, headingLevel = 3 } = Astro.props;
+const Title = `h${headingLevel}` as 'h2' | 'h3';
 const data = entry.data;
 const lang = data.lang;
 const t = useTranslations(lang);
@@ -63,7 +70,7 @@ const seriesPartLabel = seriesPart
     <span class="case__id ltr">{caseId}</span>
     <Stamp variant={statusVariant[data.status]} label={t(`status.${data.status}` as UIKey)} />
   </div>
-  <h3 class="case__title">
+  <Title class="case__title">
     {
       /* The only anchor spans the card via ::after; metadata links must never
         nest inside it, so the card itself is not a link. */
@@ -71,7 +78,7 @@ const seriesPartLabel = seriesPart
     <a class="case__main" href={href}>
       {data.title}
     </a>
-  </h3>
+  </Title>
   <div class="case__meta ltr">
     {
       data.series && (
