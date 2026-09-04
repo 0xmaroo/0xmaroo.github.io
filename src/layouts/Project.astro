@@ -46,6 +46,14 @@ const description = summary ?? t('projects.desc');
 const noindex = data.visibility.noindex || data.visibility.unlisted;
 const alternates = translation ? { [other]: path } : {};
 
+// Same visibility contract as Writeup.astro (plan/04 F-01, plan/08 §8.6):
+// an unlisted project or one hidden from search must not enter the Pagefind
+// index. Removing `data-pagefind-body` is the mechanism — `data-pagefind-ignore`
+// is element-scoped and cannot exclude a whole page.
+const isUnlisted = data.visibility.unlisted;
+const hideFromSearch = data.visibility.hideFrom.includes('search');
+const pagefindIgnore = isUnlisted || hideFromSearch;
+
 // `getRelativeLocaleUrl()` appends a trailing slash even to file routes
 // ('...slug.png/'), which 404s on GitHub Pages — strip it for the OG route.
 const ogUrl = getRelativeLocaleUrl(lang, ogImagePath('projects', slug)).replace(/\/+$/, '');
@@ -82,7 +90,7 @@ const jsonLd = {
   <article class="project">
     <header class="wrap project__head">
       <p class="project__eyebrow ltr">{t('projects.eyebrow')} · {slug}</p>
-      <h1 class="project__title">{data.title}</h1>
+      <h1 class="project__title" data-pagefind-meta="title">{data.title}</h1>
       {summary && <p class="project__summary">{summary}</p>}
 
       <div class="project__meta">
@@ -150,7 +158,7 @@ const jsonLd = {
     }
 
     <div class="wrap project__grid">
-      <div class="project__content prose" data-pagefind-body>
+      <div class="project__content prose" data-pagefind-body={pagefindIgnore ? undefined : ''}>
         <Content components={mdxComponents} />
       </div>
     </div>
