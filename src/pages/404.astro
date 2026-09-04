@@ -1,0 +1,73 @@
+---
+import Base from '../layouts/Base.astro';
+import Seo from '../components/Seo.astro';
+import { getRelativeLocaleUrl } from 'astro:i18n';
+import { sectionPaths } from '../config/site';
+import { useTranslations } from '../i18n/utils';
+
+// GitHub Pages only serves the ROOT 404.html: unknown /ar/... URLs get this
+// English page. The Arabic twin at src/pages/ar/404.astro exists for direct
+// links and in-site consistency, but GitHub will serve this one for them.
+const lang = 'en';
+const t = useTranslations(lang);
+---
+
+<Base lang={lang} title={`${t('notfound.title')} — 0xMARO`} description={t('notfound.desc')}>
+  <Seo
+    slot="head"
+    lang={lang}
+    path="/404"
+    robots="noindex"
+    title={`${t('notfound.title')} — 0xMARO`}
+    description={t('notfound.desc')}
+  />
+  <div class="wrap notfound">
+    <header class="notfound__head">
+      <span class="notfound__eyebrow ltr">{t('notfound.eyebrow')}</span>
+      <h1 class="notfound__title">{t('notfound.title')}</h1>
+      <p class="notfound__desc">{t('notfound.desc')}</p>
+    </header>
+    <div class="notfound__cta">
+      <a class="btn btn--primary" href={getRelativeLocaleUrl(lang, '/')}>{t('notfound.home')}</a>
+      <a class="btn" href={getRelativeLocaleUrl(lang, sectionPaths.writeups)}>
+        {t('writeups.title')}
+      </a>
+    </div>
+  </div>
+</Base>
+
+<style>
+  .notfound {
+    padding-block: var(--space-7) var(--space-8);
+  }
+
+  .notfound__head {
+    border-block-end: var(--hairline) solid var(--line);
+    padding-block-end: var(--space-6);
+  }
+
+  .notfound__eyebrow {
+    font-family: var(--f-code);
+    font-size: var(--text-sm);
+    color: var(--blue-500);
+  }
+
+  .notfound__title {
+    margin-block-start: var(--space-3);
+  }
+
+  .notfound__desc {
+    margin-block-start: var(--space-4);
+    max-width: var(--measure-lead);
+    font-size: var(--step-1);
+    color: var(--text-lo);
+    line-height: var(--lh-lead);
+  }
+
+  .notfound__cta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+    margin-block-start: var(--space-6);
+  }
+</style>

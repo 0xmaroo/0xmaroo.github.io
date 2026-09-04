@@ -1,0 +1,147 @@
+---
+import Base from '../../../layouts/Base.astro';
+import Seo from '../../../components/Seo.astro';
+import { useTranslations } from '../../../i18n/utils';
+import { site } from '../../../config/site';
+import { isRealProof } from '../../../lib/proof';
+
+// بنية فقط — كل نص في الصفحة هو placeholder من نوع TODO(copy) لحد ما
+// المالك يكتبه (قاعدة CLAUDE.md: ممنوع اختراع حقيقة أو رتبة أو ادعاء).
+const lang = 'ar';
+const t = useTranslations(lang);
+
+// "لا إثبات، لا عرض" (src/lib/proof.ts): لينك البروفايل بيظهر بس لما
+// يشاور على URL خارجي حقيقي. site.social.github فاضية دلوقتي، فالصف
+// ما بيرندرش — نفس انضباط الفوتر.
+const socialLinks = [{ label: t('footer.github'), url: site.social.github }].filter((l) =>
+  isRealProof(l.url)
+);
+---
+
+<Base lang={lang} title={`${t('about.title')} — 0xMARO`} description={t('about.desc')}>
+  <Seo
+    slot="head"
+    lang={lang}
+    path="/about"
+    title={`${t('about.title')} — 0xMARO`}
+    description={t('about.desc')}
+  />
+  <div class="wrap about">
+    <header class="about__head">
+      <span class="about__eyebrow ltr">{t('about.eyebrow')}</span>
+      <h1 class="about__title">{t('about.title')}</h1>
+      <p class="about__desc">{t('about.desc')}</p>
+    </header>
+
+    <div class="about__blocks">
+      <section class="about__block" aria-labelledby="about-build">
+        <h2 id="about-build" class="about__block-title">{t('about.build.title')}</h2>
+        <p class="about__block-body">{t('about.build.body')}</p>
+      </section>
+      <section class="about__block" aria-labelledby="about-work">
+        <h2 id="about-work" class="about__block-title">{t('about.work.title')}</h2>
+        <p class="about__block-body">{t('about.work.body')}</p>
+      </section>
+      <section class="about__block" aria-labelledby="about-reach">
+        <h2 id="about-reach" class="about__block-title">{t('about.reach.title')}</h2>
+        <p class="about__block-body">{t('about.reach.body')}</p>
+      </section>
+    </div>
+
+    {
+      socialLinks.length > 0 && (
+        <ul class="about__links">
+          {socialLinks.map((l) => (
+            <li>
+              <a class="ltr" href={l.url} rel="me">
+                {l.label}
+              </a>
+            </li>
+          ))}
+        </ul>
+      )
+    }
+  </div>
+</Base>
+
+<style>
+  .about {
+    padding-block: var(--space-7) var(--space-8);
+  }
+
+  .about__head {
+    border-block-end: var(--hairline) solid var(--line);
+    padding-block-end: var(--space-6);
+  }
+
+  .about__eyebrow {
+    font-family: var(--f-code);
+    font-size: var(--text-sm);
+    color: var(--blue-500);
+  }
+
+  .about__title {
+    margin-block-start: var(--space-3);
+  }
+
+  .about__desc {
+    margin-block-start: var(--space-4);
+    max-width: var(--measure-lead);
+    font-size: var(--step-1);
+    color: var(--text-lo);
+    line-height: var(--lh-lead);
+  }
+
+  .about__blocks {
+    margin-block-start: var(--space-6);
+    display: grid;
+    gap: var(--hairline);
+    background: var(--line);
+    border: var(--hairline) solid var(--line);
+    grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr));
+  }
+
+  .about__block {
+    background: var(--ink-900);
+    padding: var(--space-5);
+  }
+
+  .about__block-title {
+    margin: 0;
+    font-size: var(--step-0);
+    line-height: var(--lh-body);
+  }
+
+  .about__block-body {
+    margin: 0;
+    margin-block-start: var(--space-3);
+    color: var(--text-lo);
+    font-size: var(--step-0);
+    line-height: var(--lh-body);
+  }
+
+  .about__links {
+    margin-block-start: var(--space-6);
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-4);
+  }
+
+  .about__links a {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--touch-min);
+    font-family: var(--f-code);
+    font-size: var(--text-sm);
+    color: var(--sulfur-300);
+    text-decoration: none;
+    border-block-end: var(--hairline) solid transparent;
+  }
+
+  .about__links a:hover {
+    color: var(--sulfur-400);
+    border-block-end-color: var(--sulfur-400);
+  }
+</style>

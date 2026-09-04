@@ -58,10 +58,15 @@ export async function registerSitemapExclusions(): Promise<void> {
   writeFileSync(cachePath(), JSON.stringify([...excluded]), 'utf8');
 }
 
+/** Static noindex routes that must never be listed (plan/08 §8.6). */
+const staticExcluded = new Set(['/404', '/ar/404']);
+
 /** Sync check used by the sitemap `filter` at astro:build:done. */
 export function isSitemapExcluded(url: string): boolean {
+  const pathname = new URL(url).pathname.replace(/\/$/, '');
+  if (staticExcluded.has(pathname)) return true;
   const file = cachePath();
   if (!existsSync(file)) return false;
   const excluded = new Set<string>(JSON.parse(readFileSync(file, 'utf8')) as string[]);
-  return excluded.has(new URL(url).pathname.replace(/\/$/, ''));
+  return excluded.has(pathname);
 }

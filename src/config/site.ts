@@ -26,6 +26,7 @@ export const sections = {
   journey: { enabled: true, inNav: true },
   uses: { enabled: true, inNav: false },
   hire: { enabled: false, inNav: false },
+  about: { enabled: true, inNav: true },
 } as const satisfies Record<string, SectionConfig>;
 
 export type SectionKey = keyof typeof sections;
@@ -40,6 +41,7 @@ export const sectionPaths: Record<SectionKey, string> = {
   journey: '/journey',
   uses: '/uses',
   hire: '/hire',
+  about: '/about',
 };
 
 /** Default page meta per locale. */
