@@ -7,12 +7,15 @@
 
 ## المرحلة 0 — الأساس (≈ 4 ساعات)
 
-- [ ] احجز الدومين `0xmaro.dev` + فعّل إيميل `me@` و`security@`
-- [ ] `npm create astro@latest` → قالب minimal + TypeScript strict
-- [ ] ضيف: `@astrojs/mdx`, `@astrojs/sitemap`, `@astrojs/rss`, `pagefind`, `sharp`
-- [ ] Repo على GitHub باسم `0xmaroo.github.io` (user page) + GitHub Pages عن طريق Actions workflow
-- [ ] `.editorconfig` + Prettier + ESLint + Conventional Commits
-- [ ] نزّل خطوط IBM Plex (Sans / Sans Arabic / Mono / Sans Condensed) وحوّلها woff2 + subset، وحطها في `public/fonts`
+> **حالة التنفيذ محدَّثة 2026-09.** `[x]` = متحقق منه فعليًا في الريبو، مش تقدير.
+
+- [ ] احجز الدومين `0xmaro.dev` + فعّل إيميل `me@` و`security@` — **ما اتعملش**؛ الموقع شغال على
+      `0xmaroo.github.io`، وعشان كده `Contact:` في `security.txt` لسه `TODO(copy)`
+- [x] `npm create astro@latest` → قالب minimal + TypeScript strict
+- [x] ضيف: `@astrojs/mdx`, `@astrojs/sitemap`, `@astrojs/rss`, `pagefind`, `sharp`
+- [x] Repo على GitHub باسم `0xmaroo.github.io` (user page) + GitHub Pages عن طريق Actions workflow
+- [x] `.editorconfig` + Prettier + ESLint + Conventional Commits
+- [x] نزّل خطوط IBM Plex (Sans / Sans Arabic / Mono / Sans Condensed) وحوّلها woff2 + subset، وحطها في `public/fonts`
 
 **معيار القبول:** push على `main` → deploy تلقائي على URL شغال.
 
@@ -20,15 +23,15 @@
 
 ## المرحلة 1 — الهوية والنظام البصري (≈ 12 ساعة)
 
-- [ ] `src/styles/tokens.css` — كل الـ tokens من `03-design-system.md` بالظبط
-- [ ] `base.css` (شبكة البلوبِرنت + logical properties) + `typography.css` (المقياس السلس + قواعد العربي الخمسة تحت `html[lang='ar']` — مفيش ملف `rtl.css` منفصل)
-- [ ] `layouts/Base.astro` — head، خطوط، skip link، landmarks
-- [ ] `Header` + `Footer` + `LangSwitch` (بيحافظ على نفس الصفحة عند التبديل، مش بيرجّع للهوم)
-- [ ] **DiffHero** — التوقيع البصري، بالأنيميشن + `prefers-reduced-motion` + `sessionStorage`
-- [ ] `CaseFileCard` بالختم المايل
-- [ ] شبكة البلوبرنت الخلفية (CSS gradients، **مش صورة**)
-- [ ] الـ Rail بمؤشر التقدم شكل مسطرة قياس
-- [ ] اختبار على موبايل حقيقي (مش DevTools بس)
+- [x] `src/styles/tokens.css` — كل الـ tokens من `03-design-system.md` بالظبط
+- [x] `base.css` (شبكة البلوبِرنت + logical properties) + `typography.css` (المقياس السلس + قواعد العربي الخمسة تحت `html[lang='ar']` — مفيش ملف `rtl.css` منفصل)
+- [x] `layouts/Base.astro` — head، خطوط، skip link، landmarks
+- [x] `Header` + `Footer` + `LangSwitch` (بيحافظ على نفس الصفحة عند التبديل، مش بيرجّع للهوم)
+- [x] **DiffHero** — التوقيع البصري، بالأنيميشن + `prefers-reduced-motion` + `sessionStorage`
+- [x] `CaseFileCard` بالختم المايل
+- [x] شبكة البلوبرنت الخلفية (CSS gradients، **مش صورة**)
+- [x] الـ Rail بمؤشر التقدم شكل مسطرة قياس
+- [ ] اختبار على موبايل حقيقي (مش DevTools بس) — **لسه مفتوح**؛ القياس الآلي على 360px عدّى، بس ده مش بديل عن جهاز في إيدك
 
 **معيار القبول:** لو حطيت الهوم بتاعتك جنب 5 بورتفوليوهات أمن معلومات تانية، الفرق يبان في أقل من ثانيتين. Lighthouse ≥ 95 من دلوقتي.
 
@@ -36,16 +39,16 @@
 
 ## المرحلة 2 — نظام المحتوى + أول نشر (≈ 14 ساعة)
 
-- [ ] `src/content/config.ts` بالـ schema الكامل (شامل `visibility`)
-- [ ] `src/lib/content.ts` — `forSurface()` وكل الفلترة في مكان واحد
-- [ ] i18n: كونفيج + `ui.ts` dictionary + `getRelativeLocaleUrl` في كل اللينكات
-- [ ] `layouts/Writeup.astro` — TOC، وقت القراءة، meta، لينك الترجمة
-- [ ] مكونات MDX: `Payload`, `FixDiff`, `DeadEnd`, `Callout`, `Terminal`
-- [ ] الصفحات: `/`, `/writeups`, `/writeups/[slug]`, `/about`, `/404` (بالعربي والإنجليزي)
-- [ ] Shiki theme متسق مع الـ tokens (خلي الأصفر الكبريتي للـ strings/highlights)
-- [ ] RSS ×2 + sitemap + `robots.txt`
-- [ ] **اكتب وانشر أول 3 مقالات** (شوف `06-content-backlog.md`)
-- [ ] فعّل **Enforce HTTPS** في إعدادات Pages (دومين مخصوص `0xmaro.dev` لاحقاً = غيّر `site` + `CNAME` — الـ `.dev` بيفرض HTTPS تلقائياً)
+- [x] `src/content.config.ts` بالـ schema الكامل (شامل `visibility`)
+- [x] `src/lib/content.ts` — `forSurface()` وكل الفلترة في مكان واحد
+- [x] i18n: كونفيج + `ui.ts` dictionary + `getRelativeLocaleUrl` في كل اللينكات
+- [x] `layouts/Writeup.astro` — TOC، وقت القراءة، meta، لينك الترجمة
+- [x] مكونات MDX: `Payload`, `FixDiff`, `DeadEnd`, `Callout`, `Terminal`
+- [x] الصفحات: `/`, `/writeups`, `/writeups/[slug]`, `/about`, `/404` (بالعربي والإنجليزي) — **`/about` و`/404` اتبنوا متأخرين في المرحلة 4، كانوا ناقصين**
+- [x] Shiki theme متسق مع الـ tokens (خلي الأصفر الكبريتي للـ strings/highlights)
+- [x] RSS ×2 + sitemap + `robots.txt`
+- [ ] **اكتب وانشر أول 3 مقالات** — **ما اتعملش.** التلات ملفات موجودة بـ frontmatter كامل بس **جسمهم `TODO(copy)`**: واحد `draft`، واحد `unlisted`، وواحد منشور بجسم فاضي. `scripts/check-copy.mjs` بقى بيفشّل الـ build عشان ده ما ينشرش
+- [ ] فعّل **Enforce HTTPS** في إعدادات Pages — **مش قابل للتحقق من الريبو**، إعداد في واجهة GitHub (دومين مخصوص `0xmaro.dev` لاحقاً = غيّر `site` + `CNAME` — الـ `.dev` بيفرض HTTPS تلقائياً)
 
 ### 🚩 نقطة النشر — الموقع أونلاين من هنا
 
@@ -55,12 +58,12 @@
 
 ## المرحلة 3 — طبقة الإثبات (≈ 12 ساعة)
 
-- [ ] `/projects` + `/projects/[slug]` بالهيكل الكامل (GymOS, Riyadat, DPRIMS) — **بالعربي والإنجليزي**
-- [ ] `/labs` من YAML + فلاتر + **`proof` لكل سطر**
-- [ ] `/journey` تايم لاين
-- [ ] `/arsenal` — جدول قدرات (Domain / Tools / أنا استخدمتها فين فعلاً)، مش أيقونات
-- [ ] `StatStrip` في الهوم — 3 أرقام حقيقية بروابط تحقق
-- [ ] Open Graph images بتتولد أوتوماتيك لكل مقال (`satori` أو `astro-og-canvas`)
+- [x] `/projects` + `/projects/[slug]` بالهيكل الكامل (GymOS, Riyadat, DPRIMS) — **بالعربي والإنجليزي**
+- [x] `/labs` من YAML + فلاتر + **`proof` لكل سطر**
+- [x] `/journey` تايم لاين
+- [x] `/arsenal` — جدول قدرات (Domain / Tools / أنا استخدمتها فين فعلاً)، مش أيقونات
+- [x] `StatStrip` في الهوم — 3 أرقام حقيقية بروابط تحقق
+- [x] Open Graph images بتتولد أوتوماتيك لكل مقال — **كانت ناقصة واتعملت في المرحلة 4**: الأصل كان بيشحن صورة افتراضية واحدة لكل الصفحات. ولزمها كمان إصلاح تخطيط عربي في satori (شوف `src/lib/og.ts`)
 
 **معيار القبول:** أي رقم على الموقع تقدر تضغط عليه وتتحقق منه. مفيش claim بدون مصدر.
 
@@ -68,17 +71,31 @@
 
 ## المرحلة 4 — البحث والتلميع (≈ 10 ساعات)
 
-- [ ] Pagefind في الـ build + صفحة `/search` + التحقق من العربي والإنجليزي
-- [ ] `data-pagefind-body` على جسم المقال، وشيله من المقالات `unlisted` / `hideFrom: ['search']` (شوف §8.6 — التصحيح: `data-pagefind-ignore` مش بيستبعد صفحة كاملة عند Pagefind) — وحارس الـ build في `scripts/check-pagefind.sh` بيضمن إن الـ index مش فاضي
-- [ ] Command palette (`⌘K`)
-- [ ] فلاتر الأرشيف بالـ query params (شغالة بدون JS)
-- [ ] Related posts بالـ CWE
-- [ ] Series / سلاسل المقالات
-- [ ] Light mode (لو هتعمله، اعمله صح: بلوبرنت أزرق على ورق)
-- [ ] a11y audit كامل: keyboard-only + قارئ شاشة على صفحة عربية وإنجليزية
-- [ ] Security headers بالـ `<meta>` (CSP + Referrer-Policy) + `security.txt` — اللي قابل للتحقيق على GitHub Pages (شوف `08-quality-bar.md` §8.1)
+- [x] Pagefind في الـ build + صفحة `/search` + التحقق من العربي والإنجليزي — الواجهة متبنية على
+      **Pagefind JS API** مش المكوّن الجاهز، لأن الجاهز بيكتب `style` inline والـ CSP بتمنعه
+- [x] `data-pagefind-body` على جسم المقال، وشيله من `unlisted` / `hideFrom: ['search']` (شوف §8.6)
+      — و`scripts/check-pagefind.sh` بيضمن إن الـ index مش فاضي.
+      **اتصلح كمان:** `Project.astro` كان حاطّه بدون شرط = تسريب محتمل للمشاريع المخفية
+- [x] Command palette (`⌘K`) — `<dialog>` أصلي، وPagefind بيتحمّل عند أول بحث بس
+- [x] ~~فلاتر الأرشيف بالـ query params~~ → **مسارات مبنية مسبقًا ببُعد واحد** بعتبة عنصرين
+      (شوف `04-features.md` F-03 — الصيغة القديمة مستحيلة على `output: 'static'`).
+      **اتصلح كمان:** فلتر `/labs` كان بيقرا `searchParams` = كود ميّت مبيفلترش
+- [x] Related posts بالـ CWE
+- [x] Series / سلاسل المقالات
+- [ ] ~~Light mode~~ — **ملغي بقرار المالك (2026-09).** الهوية دارك، والمرحلة اتوجّهت للجودة
+- [~] a11y audit: **keyboard-only ✓** · تدقيق آلي على المخرجات المبنية ✓ (26 صفحة: `h1` واحد لكل
+      صفحة، صفر قفز مستويات، `alt` لكل صورة، اسم متاح لكل عنصر تفاعلي، `lang`/`dir` متطابقين)
+      · **صفر طفح أفقي على 360px عبر 12 صفحة** (مقيس بـ DevTools Protocol) ·
+      **قارئ الشاشة لسه مفتوح** — محتاج NVDA/VoiceOver ببني آدم على صفحة عربية وصفحة إنجليزية.
+      **ما اتعملش، وما ينفعش يتعلّم كمنفَّذ من غير ما حد يسمعه فعلاً.**
+- [x] Security headers بالـ `<meta>` (CSP + Referrer-Policy) + `security.txt` (§8.1) —
+      **`Contact:` في `security.txt` لسه `TODO(copy)`** لحد ما المالك يدّي عنوان بيتحكم فيه (§8.2)
 
-**معيار القبول:** Lighthouse 100/100/100/100 على 3 صفحات مختلفة. CSP وReferrer-Policy (`<meta>`) على الصفحات الحية، ومفيش `unsafe-inline` في `script-src`.
+**معيار القبول — النتيجة الفعلية:** Lighthouse **100/100/100/100 على الديسكتوب** في تلات أنواع
+صفحات؛ على الموبايل **99 · 100 · 100 · 100** وLCP 1.7–1.8s (شوف `08-quality-bar.md` §8.3 لسبب
+عدم الوصول لـ 1.2s وقرار إن الفجوة مش مستاهلة تمنها). CSP وReferrer-Policy موجودين على **24/24**
+صفحة حية، صفر `<style>` inline، والسكريبتات الوحيدة بدون `src` هي `application/ld+json`
+(data blocks مش خاضعة لـ `script-src`).
 
 ---
 
