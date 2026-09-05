@@ -12,6 +12,7 @@
     "check": "astro check",
     "lint": "eslint .",
     "new:writeup": "node scripts/new-writeup.mjs",
+    "new:note": "node scripts/new-note.mjs",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "astro": "astro"
