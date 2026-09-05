@@ -1,0 +1,114 @@
+---
+import Base from '../../../layouts/Base.astro';
+import Seo from '../../../components/Seo.astro';
+import { useTranslations } from '../../../i18n/utils';
+import type { UIKey } from '../../../i18n/ui';
+
+// بنية فقط (plan/04 F-08): عناوين الأقسام أسماء فئات حقيقية مش بتدّعي حاجة،
+// وكل نص جوه القسم هو placeholder من نوع TODO(copy) لحد ما المالك يكتبه
+// (قاعدة CLAUDE.md: ممنوع اختراع جهاز أو أداة أو لينك).
+// الـ noindex على <Seo> تحت (ومعاه مدخل /uses في src/lib/sitemap-exclude.ts)
+// بيتشال لما المالك يكتب المحتوى — وده اللي بيخلي scripts/check-copy.mjs
+// يفضل أخضر لحد كده.
+const lang = 'ar';
+const t = useTranslations(lang);
+
+const sections: { id: string; title: UIKey; body: UIKey }[] = [
+  { id: 'uses-machine', title: 'uses.machine', body: 'uses.machine.body' },
+  { id: 'uses-os', title: 'uses.os', body: 'uses.os.body' },
+  { id: 'uses-vms', title: 'uses.vms', body: 'uses.vms.body' },
+  { id: 'uses-browser', title: 'uses.browser', body: 'uses.browser.body' },
+  { id: 'uses-proxy', title: 'uses.proxy', body: 'uses.proxy.body' },
+  { id: 'uses-wordlists', title: 'uses.wordlists', body: 'uses.wordlists.body' },
+  { id: 'uses-terminal', title: 'uses.terminal', body: 'uses.terminal.body' },
+  { id: 'uses-dotfiles', title: 'uses.dotfiles', body: 'uses.dotfiles.body' },
+];
+---
+
+<Base lang={lang} title={`${t('uses.title')} — 0xMARO`} description={t('uses.desc')}>
+  <Seo
+    slot="head"
+    lang={lang}
+    path="/uses"
+    robots="noindex"
+    title={`${t('uses.title')} — 0xMARO`}
+    description={t('uses.desc')}
+  />
+  <div class="wrap uses">
+    <header class="uses__head">
+      <span class="uses__eyebrow ltr">{t('uses.eyebrow')}</span>
+      <h1 class="uses__title">{t('uses.title')}</h1>
+      <p class="uses__desc">{t('uses.desc')}</p>
+    </header>
+
+    <div class="uses__blocks">
+      {
+        sections.map((s) => (
+          <section class="uses__block" aria-labelledby={s.id}>
+            <h2 id={s.id} class="uses__block-title">
+              {t(s.title)}
+            </h2>
+            <p class="uses__block-body">{t(s.body)}</p>
+          </section>
+        ))
+      }
+    </div>
+  </div>
+</Base>
+
+<style>
+  .uses {
+    padding-block: var(--space-7) var(--space-8);
+  }
+
+  .uses__head {
+    border-block-end: var(--hairline) solid var(--line);
+    padding-block-end: var(--space-6);
+  }
+
+  .uses__eyebrow {
+    font-family: var(--f-code);
+    font-size: var(--text-sm);
+    color: var(--blue-500);
+  }
+
+  .uses__title {
+    margin-block-start: var(--space-3);
+  }
+
+  .uses__desc {
+    margin-block-start: var(--space-4);
+    max-width: var(--measure-lead);
+    font-size: var(--step-1);
+    color: var(--text-lo);
+    line-height: var(--lh-lead);
+  }
+
+  .uses__blocks {
+    margin-block-start: var(--space-6);
+    display: grid;
+    gap: var(--hairline);
+    background: var(--line);
+    border: var(--hairline) solid var(--line);
+    grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr));
+  }
+
+  .uses__block {
+    background: var(--ink-900);
+    padding: var(--space-5);
+  }
+
+  .uses__block-title {
+    margin: 0;
+    font-size: var(--step-0);
+    line-height: var(--lh-body);
+  }
+
+  .uses__block-body {
+    margin: 0;
+    margin-block-start: var(--space-3);
+    color: var(--text-lo);
+    font-size: var(--step-0);
+    line-height: var(--lh-body);
+  }
+</style>

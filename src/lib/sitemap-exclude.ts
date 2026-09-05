@@ -59,7 +59,16 @@ export async function registerSitemapExclusions(): Promise<void> {
 }
 
 /** Static noindex routes that must never be listed (plan/08 §8.6). */
-const staticExcluded = new Set(['/404', '/ar/404', '/search', '/ar/search']);
+const staticExcluded = new Set([
+  '/404',
+  '/ar/404',
+  '/search',
+  '/ar/search',
+  // /uses is noindex only while its bodies are TODO(copy); both the robots
+  // flag and this entry come off together when the owner writes the copy.
+  '/uses',
+  '/ar/uses',
+]);
 
 /**
  * Dynamic noindex utility routes (plan/04 F-03): the pre-rendered archive
