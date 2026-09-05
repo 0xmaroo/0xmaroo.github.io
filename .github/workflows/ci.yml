@@ -1,0 +1,87 @@
+# CI on every pull request (plan/05-roadmap.md Phase 6).
+#
+# Two separate jobs because they answer two different questions:
+#
+#  - `code`    — "is the site correct and fast?" Must be GREEN today.
+#  - `content` — "is the copy real yet?" Expected RED today, and that is the
+#                signal, not a bug: it enforces the anti-procrastination rule
+#                in plan/05-roadmap.md (Phase 2 does not end without three
+#                published articles). It stays red until the owner writes the
+#                article bodies; the fix is writing the articles, NOT adding
+#                ALLOW_TODO_COPY to this job.
+#
+# All actions are pinned to full commit SHAs with the version in a trailing
+# comment — no floating tags. Same supply-chain policy as deploy.yml
+# (plan/08-quality-bar.md §8.1); the SHAs are reviewed on the quarterly pass.
+name: CI
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  code:
+    name: Code quality (must be green)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Lint
+        run: npm run lint
+      - name: Type check
+        run: npm run check
+      - name: Build (Astro + Pagefind)
+        run: ALLOW_TODO_COPY=1 npm run build
+        # ALLOW_TODO_COPY is set HERE ONLY. The `code` job tests code, not
+        # copy — placeholder copy in article bodies is the `content` job's
+        # question, and that job must never carry this variable.
+      - name: Broken links (lychee)
+        uses: lycheeverse/lychee-action@e7477775783ea5526144ba13e8db5eec57747ce8 # v2.9.0
+        with:
+          # Fail the job on any broken link (plan/08-quality-bar.md §8.6).
+          fail: true
+          args: >-
+            --no-progress
+            --max-retries 3
+            './dist/**/*.html'
+      - name: Lighthouse CI
+        run: npx lhci autorun
+        # Audits three page types (home, archive, writeup) from lighthouserc.json
+        # against the built dist/. The plan's bar (plan/08-quality-bar.md §8.3)
+        # is 100 in performance, accessibility, best-practices and SEO — asserted
+        # as `warn`, NOT `error`, in this first landing: nobody has measured these
+        # numbers in CI yet, so the workflow reports the real scores instead of
+        # blocking on an unmeasured threshold. The orchestrator flips the
+        # assertions to `error` once the local baseline numbers are known.
+
+  content:
+    name: Copy guard (red until the articles are written)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Build without ALLOW_TODO_COPY
+        run: npm run build
+        # Same build as the `code` job but WITHOUT ALLOW_TODO_COPY, so
+        # scripts/check-copy.mjs fails the build when an indexable page still
+        # ships TODO(copy). This job is expected to be RED until the owner
+        # writes the article bodies — the enforcement of the
+        # anti-procrastination rule in plan/05-roadmap.md. When it turns green
+        # on its own, the copy is real.

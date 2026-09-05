@@ -24,3 +24,6 @@ pnpm-debug.log*
 
 # editor
 .vscode/
+
+# lighthouse CI reports (upload.target: filesystem)
+.lighthouseci/
