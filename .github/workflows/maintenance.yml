@@ -1,0 +1,54 @@
+# Quarterly maintenance — plan/05-roadmap.md Phase 6.
+#
+# The roadmap asks for a quarterly review, plan/08 §8.1 asks for the pinned
+# action SHAs to be reviewed on the same cadence, and §8.2 asks for a calendar
+# reminder a month before security.txt expires. All three were "remember to do
+# this". This runs the check and opens an issue with the answers, so the review
+# arrives instead of being remembered.
+#
+# It reads the repo only — no build, no network, no secrets beyond the token
+# GitHub provides for opening the issue.
+name: Quarterly maintenance
+
+on:
+  schedule:
+    # 09:00 UTC on the 1st of Jan / Apr / Jul / Oct.
+    - cron: '0 9 1 1,4,7,10 *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  report:
+    name: Open the maintenance issue
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+      - name: Build the report
+        id: report
+        run: |
+          {
+            echo 'body<<MAINT_EOF'
+            node scripts/maintenance-report.mjs
+            echo ''
+            echo '---'
+            echo 'Opened automatically by `.github/workflows/maintenance.yml`.'
+            echo 'Close it when the review is done — the next one arrives next quarter.'
+            echo MAINT_EOF
+          } >> "$GITHUB_OUTPUT"
+      - name: Open the issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BODY: ${{ steps.report.outputs.body }}
+        run: |
+          gh issue create \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "Quarterly maintenance — $(date -u +%Y-%m)" \
+            --body "$BODY"
