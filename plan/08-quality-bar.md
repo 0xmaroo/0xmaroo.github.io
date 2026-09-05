@@ -119,7 +119,11 @@ Policy: https://0xmaroo.github.io/security-policy
 
 ## 8.6 قبل كل نشر
 
-- [ ] `npm run build` بدون تحذيرات (Astro + Pagefind)
+- [ ] `npm run build` بدون تحذيرات (Astro + Pagefind) — **باستثناء واحد موثّق:**
+      `[glob-loader] No files found matching "**/*.mdx" in directory "src/content/notes"`.
+      مجموعة `notes` (F-06) اتبنت قبل ما يتكتب أول ملاحظة، والتحذير ده **صادق**: المجموعة فاضية
+      فعلاً. بيختفي لوحده أول ملاحظة تتعمل بـ `npm run new:note`. **ما اتسكّتش ولا اتحطّت ملاحظة
+      وهمية عشان يختفي** — أي تحذير تاني غير ده يتعامل معاه كعيب.
 - [ ] فحص الـ index: `scripts/check-pagefind.sh` بيفشل الـ build لو Pagefind طلّع 0 records (منع index فاضي من غير صويت)
 - [ ] `data-pagefind-body` على جسم المقال بس. **تصحيح (2026-08):** `data-pagefind-ignore` عند Pagefind حصرية على مستوى العناصر جوه الصفحة — مش بتستبعد الصفحة كلها. عشان مقال `unlisted` أو `hideFrom: ['search']` يختفي من البحث، بنشيل `data-pagefind-body` منه أصلاً (مش بنضيف ignore). التنفيذ في `layouts/Writeup.astro`.
 - [ ] `dist/.nojekyll` موجود (من غيره Jekyll بيبتر `_astro/` → الصفحة بتنزل من غير CSS/JS)
