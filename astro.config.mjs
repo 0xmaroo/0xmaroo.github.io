@@ -45,6 +45,14 @@ export default defineConfig({
   integrations: [
     mdx(),
     sitemap({
+      // plan/07-seo-and-growth.md §7.1: one sitemap for both languages, with
+      // xhtml:link alternates between the versions. The integration derives the
+      // pairs from the `/ar/` prefix, which is exactly how the routes are laid
+      // out (plan/02 §2.2 — same slug in both locales).
+      i18n: {
+        defaultLocale: 'en',
+        locales: { en: 'en', ar: 'ar' },
+      },
       filter: (page) => !isSitemapExcluded(page),
     }),
     {

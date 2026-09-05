@@ -5,12 +5,20 @@ import JsonLd from '../../components/seo/JsonLd.astro';
 import { useTranslations } from '../../i18n/utils';
 import { site } from '../../config/site';
 import { isRealProof } from '../../lib/proof';
+import { getCollection } from 'astro:content';
+import { documentedTopics } from '../../lib/content';
 import { personSchema } from '../../lib/schema';
 
 // Structure only — every prose string is the TODO(copy) placeholder until the
 // owner writes it (CLAUDE.md: never invent a fact, a rank, or a claim).
 const lang = 'en';
 const t = useTranslations(lang);
+// plan/07 §7.2 knowsAbout — derived from the site's own content, not asserted.
+const topics = documentedTopics(
+  await getCollection('writeups'),
+  (await getCollection('arsenal')).map((a) => a.data.domain[lang]),
+  lang
+);
 
 // "No proof, no render" (src/lib/proof.ts): a profile link only appears once
 // it points at a real external URL — same discipline as the footer.
@@ -28,7 +36,7 @@ const socialLinks = [
     title={`${t('about.title')} — 0xMARO`}
     description={t('about.desc')}
   />
-  <JsonLd slot="head" data={personSchema()} />
+  <JsonLd slot="head" data={personSchema(topics)} />
   <div class="wrap about">
     <header class="about__head">
       <span class="about__eyebrow ltr">{t('about.eyebrow')}</span>

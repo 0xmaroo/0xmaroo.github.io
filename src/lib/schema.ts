@@ -18,20 +18,39 @@ export type JsonLdNode = Record<string, unknown>;
  * no render). Both entries in site.social are owner-supplied; the proof gate
  * keeps a future blank value from shipping an empty or partial list.
  */
-export const personSchema = (): JsonLdNode => ({
+export const personSchema = (knowsAbout: string[] = []): JsonLdNode => ({
   '@context': 'https://schema.org',
   '@type': 'Person',
   name: site.brand,
   sameAs: [site.social.github, site.social.linkedin].filter(isRealProof),
+  // Derived from what the site actually documents, never asserted: the CWE ids
+  // of published writeups and the arsenal's capability domains. It grows with
+  // the content instead of being a claim someone has to maintain. `alumniOf`
+  // from §7.2 is deliberately absent — that is owner biography, not derivable.
+  ...(knowsAbout.length > 0 ? { knowsAbout } : {}),
 });
 
-/** WebSite — home page of each locale only. */
+/**
+ * WebSite — home page of each locale only.
+ *
+ * `potentialAction` (plan/07 §7.2) points at this locale's search page, which
+ * reads `?q=` on load and keeps it in the URL, so the target is a real, working
+ * entry point rather than a declaration.
+ */
 export const websiteSchema = (lang: Language, siteUrl: URL): JsonLdNode => ({
   '@context': 'https://schema.org',
   '@type': 'WebSite',
   name: site.brand,
   url: new URL(getRelativeLocaleUrl(lang, '/'), siteUrl).href,
   inLanguage: lang,
+  potentialAction: {
+    '@type': 'SearchAction',
+    target: {
+      '@type': 'EntryPoint',
+      urlTemplate: `${new URL(getRelativeLocaleUrl(lang, '/search'), siteUrl).href}?q={search_term_string}`,
+    },
+    'query-input': 'required name=search_term_string',
+  },
 });
 
 export interface Crumb {

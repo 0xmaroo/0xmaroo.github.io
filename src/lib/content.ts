@@ -437,3 +437,26 @@ export const noteKindIndex = (stream: Note[]): Set<string> =>
 
 /** Locale-independent path of a kind facet page (`/notes/kind/<kind>`). */
 export const noteKindPath = (kind: NoteKind): string => `/notes/kind/${facetSlug(kind)}`;
+
+/**
+ * Topics the site can actually show it works on — plan/07 §7.2 `knowsAbout`.
+ *
+ * Derived, never asserted: the CWE ids of writeups that build in production
+ * plus the arsenal's capability domains in the requested locale. It grows with
+ * the content, so it can never overstate what is on the site — which is the
+ * same rule the proof layer applies to every other claim (plan/04 F-11).
+ * `alumniOf`, also listed in §7.2, is owner biography and is not derivable, so
+ * it is deliberately not emitted.
+ */
+export const documentedTopics = (
+  writeups: Writeup[],
+  arsenalDomains: string[],
+  lang: Writeup['data']['lang']
+): string[] => {
+  const topics = new Set<string>();
+  for (const e of forSurface(writeups, 'archive', lang)) {
+    for (const id of e.data.cwe) topics.add(id);
+  }
+  for (const d of arsenalDomains) if (d.trim()) topics.add(d.trim());
+  return [...topics].sort();
+};

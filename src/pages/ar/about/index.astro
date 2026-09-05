@@ -5,12 +5,20 @@ import JsonLd from '../../../components/seo/JsonLd.astro';
 import { useTranslations } from '../../../i18n/utils';
 import { site } from '../../../config/site';
 import { isRealProof } from '../../../lib/proof';
+import { getCollection } from 'astro:content';
+import { documentedTopics } from '../../../lib/content';
 import { personSchema } from '../../../lib/schema';
 
 // بنية فقط — كل نص في الصفحة هو placeholder من نوع TODO(copy) لحد ما
 // المالك يكتبه (قاعدة CLAUDE.md: ممنوع اختراع حقيقة أو رتبة أو ادعاء).
 const lang = 'ar';
 const t = useTranslations(lang);
+// plan/07 §7.2 knowsAbout — derived from the site's own content, not asserted.
+const topics = documentedTopics(
+  await getCollection('writeups'),
+  (await getCollection('arsenal')).map((a) => a.data.domain[lang]),
+  lang
+);
 
 // "لا إثبات، لا عرض" (src/lib/proof.ts): لينك البروفايل بيظهر بس لما
 // يشاور على URL خارجي حقيقي — نفس انضباط الفوتر.
@@ -28,7 +36,7 @@ const socialLinks = [
     title={`${t('about.title')} — 0xMARO`}
     description={t('about.desc')}
   />
-  <JsonLd slot="head" data={personSchema()} />
+  <JsonLd slot="head" data={personSchema(topics)} />
   <div class="wrap about">
     <header class="about__head">
       <span class="about__eyebrow ltr">{t('about.eyebrow')}</span>

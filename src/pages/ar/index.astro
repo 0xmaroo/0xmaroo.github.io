@@ -7,7 +7,7 @@ import DiffHero from '../../components/hero/DiffHero.astro';
 import StatStrip from '../../components/proof/StatStrip.astro';
 import WriteupCard from '../../components/cards/WriteupCard.astro';
 import { getCollection } from 'astro:content';
-import { caseNumbers, featuredOnHome, slugOf } from '../../lib/content';
+import { caseNumbers, documentedTopics, featuredOnHome, slugOf } from '../../lib/content';
 import { useTranslations } from '../../i18n/utils';
 import { siteDescription } from '../../config/site';
 import { personSchema, websiteSchema } from '../../lib/schema';
@@ -17,6 +17,13 @@ const t = useTranslations(lang);
 const entries = await getCollection('writeups');
 const featured = featuredOnHome(entries, lang);
 const numbers = caseNumbers(entries);
+// plan/07 §7.2 knowsAbout — derived from the site's own content, not asserted.
+const arsenal = await getCollection('arsenal');
+const topics = documentedTopics(
+  entries,
+  arsenal.map((a) => a.data.domain[lang]),
+  lang
+);
 ---
 
 <Base lang={lang} title="0xMARO — مخطط واختراق" description={siteDescription[lang]}>
@@ -29,7 +36,7 @@ const numbers = caseNumbers(entries);
   />
   <!-- WebSite lives on the home page of each locale only; Person on home + About. -->
   <JsonLd slot="head" data={websiteSchema(lang, Astro.site!)} />
-  <JsonLd slot="head" data={personSchema()} />
+  <JsonLd slot="head" data={personSchema(topics)} />
   <Rail />
   <div class="wrap hero">
     <p class="hero__file ltr">{t('hero.file')}</p>
