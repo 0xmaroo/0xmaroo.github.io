@@ -22,7 +22,9 @@ interface SectionConfig {
  */
 export const sections = {
   writeups: { enabled: true, inNav: true },
-  notes: { enabled: true, inNav: false },
+  // F-06 is not built yet: there is no /notes route, so `enabled: true` would be
+  // a claim the config cannot keep — flip it back together with the routes.
+  notes: { enabled: false, inNav: false },
   projects: { enabled: true, inNav: true },
   labs: { enabled: true, inNav: false },
   arsenal: { enabled: true, inNav: true },
