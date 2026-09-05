@@ -105,13 +105,13 @@
 > في المرحلة 4. `script-src 'self'` معناها إن أي أداة طرف تالت = تخفيف صريح للـ CSP، فكل بند
 > اتحاسب على قاعدة **قيمته النهارده مقابل تمنه الأمني**.
 
-- [ ] **Cloudflare Web Analytics** — بدون كوكيز، بدون بانر موافقة، **دومين واحد بس** بيتضاف لـ
+- [~] **Cloudflare Web Analytics** — الخانة جاهزة كـ `TODO(infra)` في `Base.astro` ومعاها سطر الـ CSP الجاهز؛ **مستنية توكن الـ beacon من المالك**. الأصل: — بدون كوكيز، بدون بانر موافقة، **دومين واحد بس** بيتضاف لـ
       `script-src`. (كان Umami؛ اتغيّر لأن Cloudflare أبسط في الاستضافة ونفس ضمانة الخصوصية.)
       الباقي في الـ CSP يفضل `'self'` — ممنوع أي توسيع تاني.
-- [ ] `/uses`
-- [ ] JSON-LD: `Person`, `TechArticle`, `BreadcrumbList`, `WebSite` — و`sameAs` **بالروابط
+- [x] `/uses` — الهيكل والعناوين حقيقية، وكل الأجسام `TODO(copy)`؛ الصفحة `noindex` وبرّه الـ sitemap لحد ما المالك يكتبها
+- [x] JSON-LD: `Person`, `TechArticle`, `BreadcrumbList`, `WebSite` — و`sameAs` **بالروابط
       المتحققة بس** (GitHub + LinkedIn). ممنوع أي حساب مش مؤكد (§8.2).
-- [ ] `sections.hire` يفضل **مطفي**
+- [x] `sections.hire` يفضل **مطفي** — متحقق: صفر أثر في `dist/`
 - [ ] إطلاق: بوست LinkedIn + النشر في مجتمعات مصرية/عربية أمن معلومات
 
 **اتشال من المرحلة دي:**
@@ -127,9 +127,9 @@
 
 ## المرحلة 6 — الأتمتة والصيانة (مستمر)
 
-- [ ] **`npm run new:writeup`** — الأولوية الأولى. بيولّد ملف بالـ frontmatter كامل **وهيكل السبع
+- [x] **`npm run new:writeup`** — بيولّد ملف بالـ frontmatter كامل **وهيكل السبع
       أقسام** من `04-features.md` F-02، عشان كتابة المقال تبدأ من بنية مش من ملف فاضي.
-- [ ] GitHub Action: lint + build + `lychee` (لينكات مكسورة) + Lighthouse CI على كل PR
+- [x] GitHub Action: lint + build + `lychee` + Lighthouse CI على كل PR — **وظيفتين**: `code` (خضرا) و`content` (حمرا عن قصد لحد ما المقالات تتكتب)
 - [ ] مراجعة ربع سنوية: أي مقال قديم يتحدث أو يترشّح (`updatedAt`)
 - [ ] Backup للمحتوى في repo تاني
 
