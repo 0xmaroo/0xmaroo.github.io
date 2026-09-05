@@ -1,0 +1,77 @@
+---
+import Base from '../../../layouts/Base.astro';
+import Seo from '../../../components/Seo.astro';
+import NotesKindFilters from '../../../components/notes/NotesKindFilters.astro';
+import NotesList from '../../../components/notes/NotesList.astro';
+import { getCollection } from 'astro:content';
+import { forSurface } from '../../../lib/content';
+import { useTranslations } from '../../../i18n/utils';
+
+const lang = 'ar';
+const t = useTranslations(lang);
+const entries = await getCollection('notes');
+const surfaced = forSurface(entries, 'archive', lang);
+---
+
+<Base lang={lang} title={`${t('notes.title')} — 0xMARO`} description={t('notes.desc')}>
+  <Seo
+    slot="head"
+    lang={lang}
+    path="/notes"
+    title={`${t('notes.title')} — 0xMARO`}
+    description={t('notes.desc')}
+  />
+  <div class="wrap notes">
+    <header class="notes__head">
+      <span class="notes__eyebrow ltr">{t('notes.eyebrow')}</span>
+      <h1 class="notes__title">{t('notes.title')}</h1>
+      <p class="notes__desc">{t('notes.desc')}</p>
+      <p class="notes__count ltr">
+        {t('notes.count').replace('{0}', String(surfaced.length))}
+      </p>
+    </header>
+
+    <NotesKindFilters lang={lang} entries={surfaced} />
+    <NotesList lang={lang} entries={surfaced} all={entries} />
+  </div>
+</Base>
+
+<style>
+  .notes {
+    padding-block: var(--space-7) var(--space-8);
+  }
+
+  .notes__head {
+    border-block-end: var(--hairline) solid var(--line);
+    padding-block-end: var(--space-6);
+  }
+
+  .notes__eyebrow {
+    font-family: var(--f-code);
+    font-size: var(--text-sm);
+    color: var(--blue-500);
+  }
+
+  .notes__title {
+    margin-block-start: var(--space-3);
+  }
+
+  .notes__desc {
+    margin-block-start: var(--space-4);
+    max-width: var(--measure-lead);
+    font-size: var(--step-1);
+    color: var(--text-lo);
+    line-height: var(--lh-lead);
+  }
+
+  html[lang='ar'] .notes__desc {
+    line-height: var(--lh-ar);
+  }
+
+  .notes__count {
+    margin-block-start: var(--space-5);
+    font-family: var(--f-code);
+    font-size: var(--text-xs);
+    color: var(--text-dim);
+  }
+</style>

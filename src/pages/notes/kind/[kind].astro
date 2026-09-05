@@ -1,0 +1,20 @@
+---
+import NotesKindPage from '../../../components/notes/NotesKindPage.astro';
+import { getCollection } from 'astro:content';
+import { forSurface, noteKindGroups } from '../../../lib/content';
+
+// Pre-rendered kind facet pages (plan/04 F-03 pattern applied to F-06): one
+// route per kind with at least FACET_MIN_ENTRIES stream entries. No query
+// params, no client-side filtering — plain links, zero JavaScript.
+export async function getStaticPaths() {
+  const entries = await getCollection('notes');
+  const stream = forSurface(entries, 'archive', 'en');
+  return noteKindGroups(stream)
+    .filter((g) => g.linkable)
+    .map((g) => ({ params: { kind: g.slug }, props: { group: g } }));
+}
+
+const { group } = Astro.props;
+---
+
+<NotesKindPage lang="en" group={group} />

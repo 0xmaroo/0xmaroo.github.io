@@ -1,0 +1,132 @@
+---
+import { getRelativeLocaleUrl } from 'astro:i18n';
+import { noteKindGroups, noteKindLabelKey, noteKindPath, type Note } from '../../lib/content';
+import { useTranslations } from '../../i18n/utils';
+import type { Language } from '../../i18n/ui';
+
+interface Props {
+  lang: Language;
+  /** Stream-surfaced notes for `lang` — grouping happens in `noteKindGroups()`. */
+  entries: Note[];
+  /** Kind slug of the facet page currently rendered, to mark the active chip. */
+  active?: string;
+}
+
+const { lang, entries, active } = Astro.props;
+const t = useTranslations(lang);
+const groups = noteKindGroups(entries);
+---
+
+{
+  groups.length > 0 && (
+    <nav class="fbar" aria-label={t('notes.filter')}>
+      <div class="fbar__group">
+        <p class="fbar__name u-label">{t('filter.kind')}</p>
+        <ul class="fbar__values">
+          {groups.map((g) => {
+            const on = active === g.slug;
+            return (
+              <li>
+                {g.linkable ? (
+                  <a
+                    class:list={['fbar__chip', on && 'is-on']}
+                    href={getRelativeLocaleUrl(lang, noteKindPath(g.kind))}
+                    aria-current={on ? 'true' : undefined}
+                  >
+                    {t(noteKindLabelKey[g.kind])}
+                  </a>
+                ) : (
+                  // Below FACET_MIN_ENTRIES: plain text, never a link and never
+                  // a dead href (plan/04 F-03 rules applied to the notes stream).
+                  <span class="fbar__chip fbar__chip--text">{t(noteKindLabelKey[g.kind])}</span>
+                )}
+              </li>
+            );
+          })}
+        </ul>
+      </div>
+    </nav>
+  )
+}
+
+<style>
+  .fbar {
+    margin-block-start: var(--space-6);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+
+  .fbar__group {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2) var(--space-4);
+  }
+
+  .fbar__name {
+    margin: 0;
+    color: var(--text-dim);
+    min-width: var(--touch-min);
+  }
+
+  .fbar__values {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+
+  .fbar__chip {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--touch-min);
+    padding-inline: var(--space-3);
+    font-family: var(--f-cond);
+    font-size: var(--text-sm);
+    text-transform: uppercase;
+    letter-spacing: var(--ls-label);
+    color: var(--text-lo);
+    text-decoration: none;
+    border: var(--hairline) solid var(--line);
+    border-radius: var(--radius);
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .fbar__chip {
+      transition:
+        color var(--t-fast) ease,
+        border-color var(--t-fast) ease;
+    }
+  }
+
+  .fbar__chip:hover {
+    color: var(--text-hi);
+    border-color: var(--sulfur-400);
+  }
+
+  .fbar__chip.is-on {
+    color: var(--ink-900);
+    background: var(--sulfur-400);
+    border-color: var(--sulfur-400);
+  }
+
+  /* Below-threshold kind: text, not a control — no border, no hover. */
+  .fbar__chip--text {
+    color: var(--text-dim);
+    border-color: transparent;
+  }
+
+  .fbar__chip--text:hover {
+    color: var(--text-dim);
+    border-color: transparent;
+  }
+
+  html[lang='ar'] .fbar__chip {
+    font-family: var(--f-body-ar);
+    text-transform: none;
+    letter-spacing: 0;
+  }
+</style>

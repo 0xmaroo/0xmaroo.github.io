@@ -1,0 +1,18 @@
+---
+import NotesKindPage from '../../../../components/notes/NotesKindPage.astro';
+import { getCollection } from 'astro:content';
+import { forSurface, noteKindGroups } from '../../../../lib/content';
+
+// Arabic counterpart of the kind facet pages — same threshold, same rules.
+export async function getStaticPaths() {
+  const entries = await getCollection('notes');
+  const stream = forSurface(entries, 'archive', 'ar');
+  return noteKindGroups(stream)
+    .filter((g) => g.linkable)
+    .map((g) => ({ params: { kind: g.slug }, props: { group: g } }));
+}
+
+const { group } = Astro.props;
+---
+
+<NotesKindPage lang="ar" group={group} />

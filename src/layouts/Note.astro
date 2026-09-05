@@ -1,0 +1,429 @@
+---
+import Base from './Base.astro';
+import Seo from '../components/Seo.astro';
+import JsonLd from '../components/seo/JsonLd.astro';
+import Stamp from '../components/writeup/Stamp.astro';
+import Callout from '../components/writeup/Callout.astro';
+import Payload from '../components/writeup/Payload.astro';
+import FixDiff from '../components/writeup/FixDiff.astro';
+import DeadEnd from '../components/writeup/DeadEnd.astro';
+import Terminal from '../components/writeup/Terminal.astro';
+import { getRelativeLocaleUrl } from 'astro:i18n';
+import { getCollection, render } from 'astro:content';
+import type { MarkdownHeading } from 'astro';
+import { useTranslations } from '../i18n/utils';
+import {
+  forSurface,
+  noteKindIndex,
+  noteKindLabelKey,
+  noteKindPath,
+  slugOf,
+  type Note,
+} from '../lib/content';
+import { isRealProof } from '../lib/proof';
+import { readingTimeOf } from '../lib/reading-time';
+import { breadcrumbSchema } from '../lib/schema';
+import type { Language } from '../i18n/ui';
+import '../styles/prose.css';
+
+interface Props {
+  entry: Note;
+  /** Counterpart entry in the other language, when one exists. */
+  translation?: Note;
+}
+
+const { entry, translation } = Astro.props;
+const data = entry.data;
+const lang: Language = data.lang;
+const t = useTranslations(lang);
+const other: Language = lang === 'en' ? 'ar' : 'en';
+const slug = slugOf(entry);
+const path = `/notes/${slug}`;
+const { Content, headings } = await render(entry);
+
+const minutes = readingTimeOf(entry.body ?? '', lang);
+const dateFmt = new Intl.DateTimeFormat(lang === 'ar' ? 'ar' : 'en-US', {
+  year: 'numeric',
+  month: 'short',
+  day: 'numeric',
+  numberingSystem: 'latn',
+});
+const publishedLabel = t('note.published').replace('{0}', dateFmt.format(data.publishedAt));
+const updatedLabel =
+  data.updatedAt && t('note.updated').replace('{0}', dateFmt.format(data.updatedAt));
+
+const isUnlisted = data.visibility.unlisted;
+const hideFromSearch = data.visibility.hideFrom.includes('search');
+const noindex = data.visibility.noindex || isUnlisted;
+const pagefindIgnore = isUnlisted || hideFromSearch;
+const alternates = translation ? { [other]: path } : {};
+
+// A note is short-form: a TOC is only warranted once there is enough to jump
+// between. Three section links is the smallest list that pays for itself.
+const toc: MarkdownHeading[] = headings.filter((h) => h.depth === 2);
+const showToc = toc.length >= 3;
+
+// Stream context for the kind link on the stamp — everything derives from
+// `forSurface('archive')` so a draft or unlisted note can never leak in.
+const allNotes = await getCollection('notes');
+const stream = forSurface(allNotes, 'archive', lang);
+const kindLinkable = noteKindIndex(stream);
+const kindHref = kindLinkable.has(data.kind)
+  ? getRelativeLocaleUrl(lang, noteKindPath(data.kind))
+  : undefined;
+
+// Reference URL: rendered as a link only when it is real http(s) — a `TODO`
+// placeholder never becomes an anchor (isRealProof, src/lib/proof.ts).
+const source = data.source;
+const sourceHref = source && isRealProof(source.url) ? source.url : undefined;
+
+const mdxComponents = { Callout, Payload, FixDiff, DeadEnd, Terminal };
+
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'BlogPosting',
+  headline: data.title,
+  description: data.summary,
+  inLanguage: lang,
+  datePublished: data.publishedAt.toISOString(),
+  dateModified: (data.updatedAt ?? data.publishedAt).toISOString(),
+  author: { '@type': 'Person', name: '0xMARO' },
+  keywords: data.tags.join(', '),
+  mainEntityOfPage: new URL(getRelativeLocaleUrl(lang, path), Astro.site!).href,
+};
+
+const breadcrumb = breadcrumbSchema(lang, Astro.site!, [
+  { name: t('breadcrumb.home'), path: '/' },
+  { name: t('notes.title'), path: '/notes' },
+  { name: data.title, path },
+]);
+---
+
+<Base lang={lang} title={`${data.title} — 0xMARO`} description={data.summary}>
+  <Seo
+    slot="head"
+    lang={lang}
+    path={path}
+    alternates={alternates}
+    robots={noindex ? 'noindex' : 'index'}
+    title={`${data.title} — 0xMARO`}
+    description={data.summary}
+  />
+  <JsonLd slot="head" data={jsonLd} />
+  <JsonLd slot="head" data={breadcrumb} />
+
+  <article class="note-page">
+    <header class="wrap note-page__head">
+      <p class="note-page__eyebrow">
+        <span data-pagefind-filter="kind">{t(noteKindLabelKey[data.kind])}</span>
+        {' · '}
+        <bdi class="ltr">{slug}</bdi>
+      </p>
+      <h1 class="note-page__title" data-pagefind-meta="title">{data.title}</h1>
+      <p class="note-page__summary">{data.summary}</p>
+
+      <div class="note-page__meta">
+        <div class="note-page__stamps">
+          {
+            kindHref ? (
+              <a class="note-page__kindlink" href={kindHref}>
+                <Stamp variant="blue" label={t(noteKindLabelKey[data.kind])} />
+              </a>
+            ) : (
+              // Below FACET_MIN_ENTRIES: plain badge, never a link and never a
+              // dead href (plan/04 F-03 rules applied to the notes stream).
+              <Stamp variant="blue" label={t(noteKindLabelKey[data.kind])} />
+            )
+          }
+        </div>
+
+        <dl class="note-page__facts">
+          {
+            /* Copyright (plan/04-features.md F-06): a summary is the author's own
+               understanding in their own words — never copied paragraphs from the
+               work. The layout only renders the reference as a pointer to the
+               work; the wording above it stays the author's responsibility. */
+            source && (
+              <div class="fact">
+                <dt>{t('note.source')}</dt>
+                <dd class="ltr">
+                  {sourceHref ? (
+                    <a class="fact__link" href={sourceHref} rel="nofollow noreferrer">
+                      {source.name}
+                    </a>
+                  ) : (
+                    source.name
+                  )}{' '}
+                  — {source.author}
+                </dd>
+              </div>
+            )
+          }
+          {
+            data.tags.length > 0 && (
+              <div class="fact">
+                <dt>{t('note.tags')}</dt>
+                <dd class="ltr">{data.tags.join(', ')}</dd>
+              </div>
+            )
+          }
+        </dl>
+
+        <div class="note-page__dates">
+          <span class="ltr">{t('note.read').replace('{0}', String(minutes))}</span>
+          <span class="ltr" aria-hidden="true">·</span>
+          <span class="ltr">{publishedLabel}</span>
+          {updatedLabel && <span class="ltr">· {updatedLabel}</span>}
+        </div>
+      </div>
+    </header>
+
+    <div class="wrap note-page__grid">
+      {
+        showToc && (
+          <aside class="note-page__toc" aria-label={t('note.toc')}>
+            <p class="note-page__toc-label u-label ltr">{t('note.toc')}</p>
+            <ol class="note-page__toc-list">
+              {toc.map((h) => (
+                <li>
+                  <a href={`#${h.slug}`}>{h.text}</a>
+                </li>
+              ))}
+            </ol>
+          </aside>
+        )
+      }
+
+      <div class="note-page__content prose" data-pagefind-body={pagefindIgnore ? undefined : ''}>
+        <Content components={mdxComponents} />
+      </div>
+    </div>
+
+    <footer class="wrap note-page__foot">
+      {
+        translation && (
+          <a class="note-page__translate" href={getRelativeLocaleUrl(other, path)}>
+            {lang === 'en' ? t('note.readInAr') : t('note.readInEn')}
+          </a>
+        )
+      }
+      <a class="note-page__back" href={getRelativeLocaleUrl(lang, '/notes')}>
+        {t('notes.backToStream')}
+      </a>
+    </footer>
+  </article>
+</Base>
+
+<style>
+  .note-page__head {
+    padding-block-start: var(--space-7);
+    border-block-end: var(--hairline) solid var(--line);
+    padding-block-end: var(--space-6);
+  }
+
+  .note-page__eyebrow {
+    font-family: var(--f-code);
+    font-size: var(--text-xs);
+    color: var(--blue-400);
+    letter-spacing: var(--ls-meta);
+    margin-block-end: var(--space-4);
+  }
+
+  html[lang='ar'] .note-page__eyebrow {
+    font-family: var(--f-body-ar);
+    letter-spacing: 0;
+    line-height: var(--lh-ar);
+  }
+
+  .note-page__title {
+    max-width: var(--measure-read);
+  }
+
+  .note-page__summary {
+    margin-block-start: var(--space-5);
+    max-width: var(--measure-lead);
+    font-size: var(--step-1);
+    color: var(--text-lo);
+    line-height: var(--lh-lead);
+  }
+
+  .note-page__meta {
+    margin-block-start: var(--space-6);
+  }
+
+  .note-page__stamps {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+  }
+
+  /* Kind stamp wrapped in its facet link, kept at the touch-target floor. */
+  .note-page__kindlink {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--touch-min);
+  }
+
+  .note-page__facts {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-3) var(--space-5);
+    margin-block-start: var(--space-5);
+    margin-block-end: 0;
+  }
+
+  @media (min-width: 640px) {
+    .note-page__facts {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+
+  .fact {
+    margin: 0;
+  }
+
+  .fact dt {
+    font-family: var(--f-cond);
+    font-size: var(--text-xs);
+    text-transform: uppercase;
+    letter-spacing: var(--ls-label);
+    color: var(--blue-400);
+  }
+
+  html[lang='ar'] .fact dt {
+    font-family: var(--f-body-ar);
+    text-transform: none;
+    letter-spacing: 0;
+  }
+
+  .fact dd {
+    margin: var(--space-1) 0 0;
+    font-size: var(--step--1);
+    color: var(--text);
+  }
+
+  /* Reference link inside a fact value — link only when the URL is real. */
+  .fact__link {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--touch-min);
+    color: var(--blue-400);
+    text-decoration: none;
+    border-block-end: var(--hairline) solid transparent;
+  }
+
+  .fact__link:hover {
+    color: var(--sulfur-300);
+    border-block-end-color: var(--sulfur-400);
+  }
+
+  .note-page__dates {
+    margin-block-start: var(--space-5);
+    font-family: var(--f-code);
+    font-size: var(--text-xs);
+    color: var(--text-dim);
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+
+  /* ── Grid: content + TOC in the rail margin when a note earns one ── */
+  .note-page__grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-6);
+    padding-block-start: var(--space-7);
+    padding-block-end: var(--space-8);
+  }
+
+  @media (min-width: 1080px) {
+    .note-page__grid {
+      grid-template-columns: minmax(0, 7fr) minmax(0, 3fr);
+      gap: var(--space-8);
+    }
+
+    .note-page__content {
+      order: 1;
+    }
+
+    .note-page__toc {
+      order: 2;
+    }
+  }
+
+  .note-page__toc {
+    position: sticky;
+    top: calc(var(--space-5) + 56px);
+    align-self: start;
+    border-inline-start: var(--hairline) solid var(--line);
+    padding-inline-start: var(--space-4);
+  }
+
+  .note-page__toc-label {
+    margin-block-end: var(--space-3);
+  }
+
+  .note-page__toc-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  .note-page__toc-list a {
+    display: inline-block;
+    min-height: var(--touch-min);
+    line-height: var(--touch-min);
+    font-size: var(--step--1);
+    color: var(--text-lo);
+    text-decoration: none;
+    border-block-end: var(--hairline) solid transparent;
+    transition:
+      color var(--t-fast) ease,
+      border-color var(--t-fast) ease;
+  }
+
+  .note-page__toc-list a:hover {
+    color: var(--sulfur-300);
+    border-block-end-color: var(--sulfur-400);
+  }
+
+  .note-page__foot {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-4) var(--space-6);
+    padding-block: var(--space-6);
+    border-block-start: var(--hairline) solid var(--line);
+    font-family: var(--f-cond);
+    font-size: var(--text-sm);
+    text-transform: uppercase;
+    letter-spacing: var(--ls-label);
+  }
+
+  html[lang='ar'] .note-page__foot {
+    font-family: var(--f-body-ar);
+    text-transform: none;
+    letter-spacing: 0;
+  }
+
+  .note-page__foot a {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--touch-min);
+    color: var(--text-lo);
+    text-decoration: none;
+    border-block-end: var(--hairline) solid transparent;
+  }
+
+  .note-page__foot a:hover {
+    color: var(--sulfur-300);
+    border-block-end-color: var(--sulfur-400);
+  }
+
+  .note-page__back {
+    margin-inline-start: auto;
+  }
+</style>

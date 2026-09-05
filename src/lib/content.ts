@@ -13,6 +13,10 @@ import type { UIKey } from '../i18n/ui';
 
 export type Writeup = CollectionEntry<'writeups'>;
 export type Project = CollectionEntry<'projects'>;
+export type Note = CollectionEntry<'notes'>;
+
+/** Locale code shared by every localized collection (plan/02 §2.7). */
+export type Lang = Writeup['data']['lang'];
 
 /**
  * A surface is a place a post can appear. `direct` is the viewing context of
@@ -28,11 +32,24 @@ export const isPublic = (entry: VisibilityCarrier): boolean => !entry.data.visib
 export const buildsInProd = (entry: VisibilityCarrier): boolean =>
   !(import.meta.env.PROD && entry.data.visibility.draft);
 
-export const forSurface = (
-  entries: Writeup[],
+/**
+ * The entry shape `forSurface()` needs. Writeups, projects and notes all
+ * satisfy it, so one filter serves every collection (rule 7) — a second,
+ * per-collection copy of this logic is how a draft leaks into RSS.
+ */
+interface SurfaceEntry {
+  data: {
+    lang: Lang;
+    visibility: { draft: boolean; unlisted: boolean; hideFrom: string[] };
+    publishedAt: Date;
+  };
+}
+
+export const forSurface = <T extends SurfaceEntry>(
+  entries: T[],
   surface: Surface,
-  lang: Writeup['data']['lang']
-): Writeup[] =>
+  lang: Lang
+): T[] =>
   entries
     .filter(isPublic)
     .filter((e) => e.data.lang === lang)
@@ -40,16 +57,26 @@ export const forSurface = (
     .filter((e) => surface === 'direct' || !e.data.visibility.hideFrom.includes(surface))
     .sort((a, b) => b.data.publishedAt.getTime() - a.data.publishedAt.getTime());
 
-/** Locale-independent slug derived from the on-disk id (`en/foo.mdx` → `foo`). */
-export const slugOf = (entry: Writeup): string =>
+/**
+ * Locale-independent slug derived from the on-disk id (`en/foo.mdx` → `foo`).
+ * Structural on purpose: every collection that follows the one-folder-per-
+ * language convention (plan/02 §2.3) produces ids this helper understands.
+ */
+export const slugOf = (entry: { id: string }): string =>
   entry.id.replace(/\.mdx?$/, '').replace(/^[a-z]{2}\//, '');
 
 /**
- * The counterpart post in the other language. Prefers the same-slug convention
- * (plan/02 §2.2), falling back to the explicit `translationOf` field.
+ * The counterpart post in the other language. Generic over every collection
+ * that follows the same-slug convention (plan/02 §2.2), falling back to the
+ * explicit `translationOf` field.
  */
-export const getTranslation = (entries: Writeup[], entry: Writeup): Writeup | undefined => {
-  const other: Writeup['data']['lang'] = entry.data.lang === 'en' ? 'ar' : 'en';
+export const getTranslation = <
+  T extends { id: string; data: { lang: Lang; translationOf?: string } },
+>(
+  entries: T[],
+  entry: T
+): T | undefined => {
+  const other: Lang = entry.data.lang === 'en' ? 'ar' : 'en';
   const sameSlug = entries.find((e) => e.data.lang === other && slugOf(e) === slugOf(entry));
   if (sameSlug) return sameSlug;
   if (entry.data.translationOf) {
@@ -105,8 +132,7 @@ export const projectSurface = (entries: Project[], lang: Project['data']['lang']
     .sort((a, b) => b.data.publishedAt.getTime() - a.data.publishedAt.getTime());
 
 /** Same on-disk slug convention as writeups: `en/gymos.mdx` → `gymos`. */
-export const projectSlugOf = (entry: Project): string =>
-  entry.id.replace(/\.mdx?$/, '').replace(/^[a-z]{2}\//, '');
+export const projectSlugOf = (entry: Project): string => slugOf(entry);
 
 /** The counterpart project in the other language (same slug by convention). */
 export const getProjectTranslation = (entries: Project[], entry: Project): Project | undefined => {
@@ -342,3 +368,72 @@ export const relatedByCwe = (
     .slice(0, limit)
     .map((s) => s.e);
 };
+
+/* ────────────────────────────────────────────────────────────────────────────
+ * Notes stream kind facets — plan/04-features.md F-06.
+ *
+ * The stream has exactly one facet dimension (`kind`), served by the same
+ * pre-rendered-route + threshold rules as the writeup archive (F-03): one
+ * built path per kind with at least FACET_MIN_ENTRIES stream entries, plain
+ * text below it, noindex and outside the sitemap everywhere.
+ * ──────────────────────────────────────────────────────────────────────────── */
+
+/** The four §2.4 note kinds — the binding schema, not F-06's loose prose. */
+export type NoteKind = 'note' | 'book-summary' | 'paper-summary' | 'til';
+
+/** Canonical fallback display order (schema enum order); count sorts first. */
+export const NOTE_KINDS: readonly NoteKind[] = ['note', 'book-summary', 'paper-summary', 'til'];
+
+/** i18n key naming each kind — labels never live in components. */
+export const noteKindLabelKey: Record<NoteKind, UIKey> = {
+  note: 'note.kind.note',
+  'book-summary': 'note.kind.book-summary',
+  'paper-summary': 'note.kind.paper-summary',
+  til: 'note.kind.til',
+};
+
+export interface NoteKindGroup {
+  kind: NoteKind;
+  /** URL segment — `facetSlug(kind)`, which is the kind itself. */
+  slug: string;
+  /** Matching notes, newest first (the `forSurface()` order is preserved). */
+  entries: Note[];
+  /** True when a route was generated (`entries.length >= FACET_MIN_ENTRIES`). */
+  linkable: boolean;
+}
+
+/**
+ * Group stream-surfaced notes by kind. Groups below `FACET_MIN_ENTRIES` are
+ * still returned — the kind bar shows them as plain text — but carry
+ * `linkable: false` so no route and no link ever point at them. Sorted by
+ * count, then by the canonical schema order.
+ */
+export const noteKindGroups = (entries: Note[]): NoteKindGroup[] => {
+  const byKind = new Map<NoteKind, Note[]>();
+  for (const e of entries) {
+    byKind.set(e.data.kind, [...(byKind.get(e.data.kind) ?? []), e]);
+  }
+  const canonical = new Map(NOTE_KINDS.map((k, i) => [k, i] as const));
+  return [...byKind.entries()]
+    .map(([kind, list]) => ({
+      kind,
+      slug: facetSlug(kind),
+      entries: list,
+      linkable: list.length >= FACET_MIN_ENTRIES,
+    }))
+    .sort(
+      (a, b) =>
+        b.entries.length - a.entries.length || canonical.get(a.kind)! - canonical.get(b.kind)!
+    );
+};
+
+/** Linkable kinds for one locale's stream — the lookup cards use to decide link vs text. */
+export const noteKindIndex = (stream: Note[]): Set<string> =>
+  new Set(
+    noteKindGroups(stream)
+      .filter((g) => g.linkable)
+      .map((g) => g.kind)
+  );
+
+/** Locale-independent path of a kind facet page (`/notes/kind/<kind>`). */
+export const noteKindPath = (kind: NoteKind): string => `/notes/kind/${facetSlug(kind)}`;

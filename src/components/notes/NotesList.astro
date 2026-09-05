@@ -1,0 +1,52 @@
+---
+import NoteCard from './NoteCard.astro';
+import { forSurface, noteKindIndex, type Note } from '../../lib/content';
+import { useTranslations } from '../../i18n/utils';
+import type { Language } from '../../i18n/ui';
+
+interface Props {
+  lang: Language;
+  /** The notes to list — the full stream, or one kind group's members. */
+  entries: Note[];
+  /**
+   * The full notes collection. The locale's stream surface (for kind
+   * linkability) is recomputed through `forSurface()` — a kind-filtered
+   * `entries` list must never stand in for it.
+   */
+  all: Note[];
+}
+
+const { lang, entries, all } = Astro.props;
+const t = useTranslations(lang);
+const stream = forSurface(all, 'archive', lang);
+const kindLinkable = noteKindIndex(stream);
+---
+
+{
+  entries.length > 0 ? (
+    <div class="notes__grid">
+      {entries.map((e) => (
+        <NoteCard entry={e} kindLinkable={kindLinkable} headingLevel={2} />
+      ))}
+    </div>
+  ) : (
+    <p class="notes__empty">{t('notes.empty')}</p>
+  )
+}
+
+<style>
+  .notes__grid {
+    margin-block-start: var(--space-6);
+    display: grid;
+    gap: var(--hairline);
+    background: var(--line);
+    border: var(--hairline) solid var(--line);
+    grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr));
+  }
+
+  .notes__empty {
+    margin-block-start: var(--space-7);
+    color: var(--text-lo);
+    font-size: var(--step-1);
+  }
+</style>

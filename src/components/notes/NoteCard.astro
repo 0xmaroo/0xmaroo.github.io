@@ -1,0 +1,182 @@
+---
+import { getRelativeLocaleUrl } from 'astro:i18n';
+import Stamp from '../writeup/Stamp.astro';
+import { useTranslations } from '../../i18n/utils';
+import { noteKindLabelKey, noteKindPath, slugOf, type Note } from '../../lib/content';
+import { isRealProof } from '../../lib/proof';
+import { readingTimeOf } from '../../lib/reading-time';
+
+interface Props {
+  entry: Note;
+  /**
+   * Linkable kinds for the current locale (`noteKindIndex()` in
+   * src/lib/content.ts). A kind present here links to its pre-rendered facet
+   * page; otherwise the badge stays a badge. Surfaces that don't compute it
+   * (none today) omit it.
+   */
+  kindLinkable?: Set<string>;
+  /**
+   * Heading level for the card title. Cards sit directly under the page `<h1>`
+   * on the stream, where 2 is right; under a section `<h2>` they would need 3.
+   */
+  headingLevel?: 2 | 3;
+}
+
+const { entry, kindLinkable, headingLevel = 2 } = Astro.props;
+const Title = `h${headingLevel}` as 'h2' | 'h3';
+const data = entry.data;
+const lang = data.lang;
+const t = useTranslations(lang);
+const slug = slugOf(entry);
+const href = getRelativeLocaleUrl(lang, `/notes/${slug}`);
+const kindHref = kindLinkable?.has(data.kind)
+  ? getRelativeLocaleUrl(lang, noteKindPath(data.kind))
+  : undefined;
+const minutes = readingTimeOf(entry.body ?? '', lang);
+const reading = t('note.read').replace('{0}', String(minutes));
+const source = data.source;
+const sourceHref = source && isRealProof(source.url) ? source.url : undefined;
+const published = data.publishedAt.toISOString().slice(0, 10);
+---
+
+<article class="note-card">
+  <div class="note-card__top">
+    <span class="note-card__date ltr">{published}</span>
+    {
+      kindHref ? (
+        <a class="note-card__kindlink" href={kindHref}>
+          <Stamp variant="blue" label={t(noteKindLabelKey[data.kind])} />
+        </a>
+      ) : (
+        // Below FACET_MIN_ENTRIES: plain badge, never a link and never a dead
+        // href (plan/04 F-03 rules applied to the notes stream).
+        <Stamp variant="blue" label={t(noteKindLabelKey[data.kind])} />
+      )
+    }
+  </div>
+  <Title class="note-card__title">
+    {
+      /* The only anchor spans the card via ::after; metadata links must never
+         nest inside it, so the card itself is not a link. */
+    }
+    <a class="note-card__main" href={href}>
+      {data.title}
+    </a>
+  </Title>
+  <div class="note-card__meta ltr">
+    {
+      source && (
+        <span class="note-card__src">
+          {sourceHref ? (
+            <a class="note-card__flink" href={sourceHref} rel="nofollow noreferrer">
+              {source.name}
+            </a>
+          ) : (
+            source.name
+          )}{' '}
+          — {source.author}
+        </span>
+      )
+    }
+    {data.tags.length > 0 && <span>{data.tags.join(', ')}</span>}
+    <span>{reading}</span>
+  </div>
+</article>
+
+<style>
+  .note-card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    padding: var(--space-5);
+    background: var(--ink-900);
+    transition: background var(--t-fast) ease;
+  }
+
+  .note-card:hover {
+    background: var(--ink-800);
+  }
+
+  .note-card__top {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2) var(--space-3);
+  }
+
+  .note-card__date {
+    font-family: var(--f-code);
+    font-size: var(--text-xs);
+    color: var(--blue-400);
+    letter-spacing: var(--ls-meta);
+  }
+
+  /* Kind stamp wrapped in its facet link, kept at the touch-target floor. */
+  .note-card__kindlink {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--touch-min);
+  }
+
+  .note-card__title {
+    margin: 0;
+    font-size: var(--step-0);
+    font-weight: 600;
+    font-family: var(--f-display);
+    letter-spacing: var(--ls-display);
+    color: var(--text-hi);
+    line-height: var(--lh-body);
+    transition: color var(--t-fast) ease;
+  }
+
+  html[lang='ar'] .note-card__title {
+    font-family: var(--f-body-ar);
+    letter-spacing: 0;
+    line-height: var(--lh-ar);
+  }
+
+  .note-card:hover .note-card__title {
+    color: var(--sulfur-300);
+  }
+
+  /* Stretched link: the title anchor covers the whole card while the metadata
+     links below stay clickable above it. */
+  .note-card__main {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  .note-card__main::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+  }
+
+  .note-card__meta {
+    margin-block-start: auto;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2) var(--space-3);
+    font-family: var(--f-code);
+    font-size: var(--text-xs);
+    color: var(--text-dim);
+  }
+
+  .note-card__flink {
+    position: relative;
+    z-index: 1;
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--touch-min);
+    color: var(--blue-400);
+    text-decoration: none;
+    border-block-end: var(--hairline) solid transparent;
+  }
+
+  .note-card__flink:hover {
+    color: var(--sulfur-300);
+    border-block-end-color: var(--sulfur-400);
+  }
+</style>

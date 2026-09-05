@@ -112,6 +112,59 @@ const projects = defineCollection({
 });
 
 /**
+ * Notes — the short-form stream (plan/04-features.md F-06): TILs, plain notes
+ * and book/paper summaries. `kind` follows the §2.4 binding schema, not F-06's
+ * loose prose. A summary MUST carry its `source` reference — the refinement
+ * turns a summary without a reference into a build error, because a summary
+ * that does not name the work it summarises is unverifiable. `source.url` is a
+ * plain string, not a URL type: while drafting it may be empty or a TODO
+ * marker; Note.astro only renders it as a link when it is real http(s)
+ * (`isRealProof`, src/lib/proof.ts).
+ */
+const noteSource = z.object({
+  name: z.string().min(1), // the book or paper being summarised
+  author: z.string().min(1),
+  url: z.string().default(''), // reference URL; not real http(s) → rendered as text
+});
+
+/** Kinds that require a `source` — read at run time by scripts/new-note.mjs. */
+const NOTE_SUMMARY_KINDS = ['book-summary', 'paper-summary'] as const;
+
+const notes = defineCollection({
+  loader: glob({ pattern: '**/*.mdx', base: './src/content/notes' }),
+  schema: () =>
+    z
+      .object({
+        title: z.string().max(70),
+        summary: z.string().min(80).max(200), // used in meta and on the card
+        lang: z.enum(['en', 'ar']),
+        translationOf: z.string().optional(), // slug of the other-language version
+        publishedAt: z.coerce.date(),
+        updatedAt: z.coerce.date().optional(),
+
+        kind: z.enum(['note', 'book-summary', 'paper-summary', 'til']),
+        source: noteSource.optional(), // required for the summary kinds — see refinement
+        tags: z.array(z.string()).max(8).default([]),
+        visibility: visibility.default(() => ({
+          draft: true,
+          unlisted: false,
+          featured: false,
+          noindex: false,
+          hideFrom: [],
+        })),
+      })
+      .refine(
+        (data) =>
+          !(NOTE_SUMMARY_KINDS as readonly string[]).includes(data.kind) ||
+          data.source !== undefined,
+        {
+          message:
+            '`source` (name, author, url) is required for book-summary and paper-summary notes — plan/04-features.md F-06',
+        }
+      ),
+});
+
+/**
  * Labs & CTF — one YAML file per result (plan/02 §2.3, plan/04 F-05).
  * A row with a claim (`result`) but no real `proof` URL is held back by the
  * surface filter — never rendered.
@@ -168,4 +221,4 @@ const arsenal = defineCollection({
     }),
 });
 
-export const collections = { writeups, projects, labs, journey, arsenal };
+export const collections = { writeups, projects, notes, labs, journey, arsenal };

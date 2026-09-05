@@ -1,0 +1,21 @@
+---
+import Note from '../../layouts/Note.astro';
+import { getCollection } from 'astro:content';
+import { buildsInProd, getTranslation, slugOf } from '../../lib/content';
+import { registerSitemapExclusions } from '../../lib/sitemap-exclude';
+
+export async function getStaticPaths() {
+  const entries = await getCollection('notes');
+  await registerSitemapExclusions();
+  return entries
+    .filter((e) => e.data.lang === 'en' && buildsInProd(e))
+    .map((entry) => ({
+      params: { slug: slugOf(entry) },
+      props: { entry, translation: getTranslation(entries, entry) },
+    }));
+}
+
+const { entry, translation } = Astro.props;
+---
+
+<Note entry={entry} translation={translation} />

@@ -49,11 +49,28 @@ async function projectExclusions(lang: Language): Promise<string[]> {
   return excluded;
 }
 
+async function noteExclusions(lang: Language): Promise<string[]> {
+  const { getCollection } = await import('astro:content');
+  const entries = await getCollection('notes');
+  const surfaced = new Set(forSurface(entries, 'sitemap', lang).map((e) => slugOf(e)));
+  const excluded: string[] = [];
+  for (const e of entries.filter((x) => x.data.lang === lang)) {
+    if (!buildsInProd(e)) continue; // never built → never in sitemap
+    const slug = slugOf(e);
+    if (e.data.visibility.noindex || !surfaced.has(slug)) {
+      const prefix = lang === 'en' ? '/notes/' : '/ar/notes/';
+      excluded.push(`${prefix}${slug}`);
+    }
+  }
+  return excluded;
+}
+
 export async function registerSitemapExclusions(): Promise<void> {
   const excluded = new Set<string>();
   for (const lang of ['en', 'ar'] as Language[]) {
     for (const item of await writeupExclusions(lang)) excluded.add(item);
     for (const item of await projectExclusions(lang)) excluded.add(item);
+    for (const item of await noteExclusions(lang)) excluded.add(item);
   }
   writeFileSync(cachePath(), JSON.stringify([...excluded]), 'utf8');
 }
@@ -72,11 +89,13 @@ const staticExcluded = new Set([
 
 /**
  * Dynamic noindex utility routes (plan/04 F-03): the pre-rendered archive
- * facet pages and labs platform pages. They are navigation tools, not content
- * — every one of them is `noindex` and must stay out of the sitemap.
+ * facet pages, notes kind pages and labs platform pages. They are navigation
+ * tools, not content — every one of them is `noindex` and must stay out of
+ * the sitemap.
  */
 const excludedPatterns: RegExp[] = [
   /^\/(?:ar\/)?writeups\/(?:category|type|cwe|year|severity|series)\//,
+  /^\/(?:ar\/)?notes\/kind\//,
   /^\/(?:ar\/)?labs\/platform\//,
 ];
 

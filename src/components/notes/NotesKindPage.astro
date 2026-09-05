@@ -1,0 +1,155 @@
+---
+import Base from '../../layouts/Base.astro';
+import Seo from '../Seo.astro';
+import JsonLd from '../seo/JsonLd.astro';
+import NotesKindFilters from './NotesKindFilters.astro';
+import NotesList from './NotesList.astro';
+import { getCollection } from 'astro:content';
+import { getRelativeLocaleUrl } from 'astro:i18n';
+import {
+  forSurface,
+  noteKindGroups,
+  noteKindLabelKey,
+  type NoteKindGroup,
+} from '../../lib/content';
+import { useTranslations } from '../../i18n/utils';
+import { breadcrumbSchema } from '../../lib/schema';
+import type { Language } from '../../i18n/ui';
+
+interface Props {
+  lang: Language;
+  group: NoteKindGroup;
+}
+
+const { lang, group } = Astro.props;
+const t = useTranslations(lang);
+const entries = await getCollection('notes');
+const stream = forSurface(entries, 'archive', lang);
+const other = lang === 'en' ? 'ar' : 'en';
+
+// hreflang only points at the other locale when that route was generated
+// there too — a thin or empty Arabic stream must not produce a dead alternate.
+const otherStream = forSurface(entries, 'archive', other);
+const hasOther = noteKindGroups(otherStream).some((g) => g.slug === group.slug && g.linkable);
+const alternates = hasOther ? { [other]: `/notes/kind/${group.slug}` } : {};
+
+const display = t(noteKindLabelKey[group.kind]);
+const title = `${display} · ${t('notes.title')} — 0xMARO`;
+
+const breadcrumb = breadcrumbSchema(lang, Astro.site!, [
+  { name: t('breadcrumb.home'), path: '/' },
+  { name: t('notes.title'), path: '/notes' },
+  { name: display, path: `/notes/kind/${group.slug}` },
+]);
+---
+
+<Base lang={lang} title={title} description={t('notes.desc')}>
+  <Seo
+    slot="head"
+    lang={lang}
+    path={`/notes/kind/${group.slug}`}
+    alternates={alternates}
+    robots="noindex"
+    title={title}
+    description={t('notes.desc')}
+  />
+  <JsonLd slot="head" data={breadcrumb} />
+  <div class="wrap notes">
+    <header class="notes__head">
+      <span class="notes__eyebrow ltr">{t('notes.eyebrow')}</span>
+      <h1 class="notes__title">{t('notes.title')}</h1>
+      <p class="notes__desc">{t('notes.desc')}</p>
+      <p class="notes__count ltr">
+        {t('notes.count').replace('{0}', String(group.entries.length))}
+      </p>
+      <p class="notes__active">
+        <span>{t('filter.active')}</span>
+        <span>{display}</span>
+        <a class="notes__clear" href={getRelativeLocaleUrl(lang, '/notes')}>
+          {t('filter.clear')}
+        </a>
+      </p>
+    </header>
+
+    <NotesKindFilters lang={lang} entries={stream} active={group.slug} />
+    <NotesList lang={lang} entries={group.entries} all={entries} />
+  </div>
+</Base>
+
+<style>
+  .notes {
+    padding-block: var(--space-7) var(--space-8);
+  }
+
+  .notes__head {
+    border-block-end: var(--hairline) solid var(--line);
+    padding-block-end: var(--space-6);
+  }
+
+  .notes__eyebrow {
+    font-family: var(--f-code);
+    font-size: var(--text-sm);
+    color: var(--blue-500);
+  }
+
+  .notes__title {
+    margin-block-start: var(--space-3);
+  }
+
+  .notes__desc {
+    margin-block-start: var(--space-4);
+    max-width: var(--measure-lead);
+    font-size: var(--step-1);
+    color: var(--text-lo);
+    line-height: var(--lh-lead);
+  }
+
+  .notes__count {
+    margin-block-start: var(--space-5);
+    font-family: var(--f-code);
+    font-size: var(--text-xs);
+    color: var(--text-dim);
+  }
+
+  .notes__active {
+    margin-block-start: var(--space-4);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2) var(--space-3);
+    font-family: var(--f-code);
+    font-size: var(--text-sm);
+    color: var(--text-hi);
+  }
+
+  html[lang='ar'] .notes__active {
+    font-family: var(--f-body-ar);
+    line-height: var(--lh-ar);
+  }
+
+  .notes__clear {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--touch-min);
+    padding-inline: var(--space-3);
+    font-family: var(--f-cond);
+    font-size: var(--text-sm);
+    text-transform: uppercase;
+    letter-spacing: var(--ls-label);
+    color: var(--text-lo);
+    text-decoration: none;
+    border: var(--hairline) solid var(--line);
+    border-radius: var(--radius);
+  }
+
+  .notes__clear:hover {
+    color: var(--text-hi);
+    border-color: var(--sulfur-400);
+  }
+
+  html[lang='ar'] .notes__clear {
+    font-family: var(--f-body-ar);
+    text-transform: none;
+    letter-spacing: 0;
+  }
+</style>
