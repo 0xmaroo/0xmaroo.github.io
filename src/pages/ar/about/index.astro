@@ -1,9 +1,11 @@
 ---
 import Base from '../../../layouts/Base.astro';
 import Seo from '../../../components/Seo.astro';
+import JsonLd from '../../../components/seo/JsonLd.astro';
 import { useTranslations } from '../../../i18n/utils';
 import { site } from '../../../config/site';
 import { isRealProof } from '../../../lib/proof';
+import { personSchema } from '../../../lib/schema';
 
 // بنية فقط — كل نص في الصفحة هو placeholder من نوع TODO(copy) لحد ما
 // المالك يكتبه (قاعدة CLAUDE.md: ممنوع اختراع حقيقة أو رتبة أو ادعاء).
@@ -11,11 +13,11 @@ const lang = 'ar';
 const t = useTranslations(lang);
 
 // "لا إثبات، لا عرض" (src/lib/proof.ts): لينك البروفايل بيظهر بس لما
-// يشاور على URL خارجي حقيقي. site.social.github فاضية دلوقتي، فالصف
-// ما بيرندرش — نفس انضباط الفوتر.
-const socialLinks = [{ label: t('footer.github'), url: site.social.github }].filter((l) =>
-  isRealProof(l.url)
-);
+// يشاور على URL خارجي حقيقي — نفس انضباط الفوتر.
+const socialLinks = [
+  { label: t('footer.github'), url: site.social.github },
+  { label: t('footer.linkedin'), url: site.social.linkedin },
+].filter((l) => isRealProof(l.url));
 ---
 
 <Base lang={lang} title={`${t('about.title')} — 0xMARO`} description={t('about.desc')}>
@@ -26,6 +28,7 @@ const socialLinks = [{ label: t('footer.github'), url: site.social.github }].fil
     title={`${t('about.title')} — 0xMARO`}
     description={t('about.desc')}
   />
+  <JsonLd slot="head" data={personSchema()} />
   <div class="wrap about">
     <header class="about__head">
       <span class="about__eyebrow ltr">{t('about.eyebrow')}</span>

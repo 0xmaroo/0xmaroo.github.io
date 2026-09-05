@@ -1,6 +1,7 @@
 ---
 import Base from './Base.astro';
 import Seo from '../components/Seo.astro';
+import JsonLd from '../components/seo/JsonLd.astro';
 import Stamp from '../components/writeup/Stamp.astro';
 import Callout from '../components/writeup/Callout.astro';
 import { getRelativeLocaleUrl } from 'astro:i18n';
@@ -9,6 +10,7 @@ import { useTranslations } from '../i18n/utils';
 import { projectSlugOf, slugOf, type Project, type Writeup } from '../lib/content';
 import { ogImagePath } from '../lib/og';
 import { isTodo, surfaceProjectMetrics } from '../lib/proof';
+import { breadcrumbSchema } from '../lib/schema';
 import type { Language, UIKey } from '../i18n/ui';
 import '../styles/prose.css';
 
@@ -71,6 +73,12 @@ const jsonLd = {
   author: { '@type': 'Person', name: '0xMARO' },
   mainEntityOfPage: new URL(getRelativeLocaleUrl(lang, path), Astro.site!).href,
 };
+
+const breadcrumb = breadcrumbSchema(lang, Astro.site!, [
+  { name: t('breadcrumb.home'), path: '/' },
+  { name: t('projects.title'), path: '/projects' },
+  { name: data.title, path },
+]);
 ---
 
 <Base lang={lang} title={`${data.title} — 0xMARO`} description={description}>
@@ -85,7 +93,8 @@ const jsonLd = {
     image={ogUrl}
     imageAlt={data.title}
   />
-  <script slot="head" type="application/ld+json" set:html={JSON.stringify(jsonLd)} is:inline />
+  <JsonLd slot="head" data={jsonLd} />
+  <JsonLd slot="head" data={breadcrumb} />
 
   <article class="project">
     <header class="wrap project__head">

@@ -1,6 +1,7 @@
 ---
 import Base from '../../layouts/Base.astro';
 import Seo from '../Seo.astro';
+import JsonLd from '../seo/JsonLd.astro';
 import ArchiveFilters from './ArchiveFilters.astro';
 import ArchiveList from './ArchiveList.astro';
 import { getCollection } from 'astro:content';
@@ -14,6 +15,7 @@ import {
   type FacetKind,
 } from '../../lib/content';
 import { useTranslations } from '../../i18n/utils';
+import { breadcrumbSchema } from '../../lib/schema';
 import type { Language, UIKey } from '../../i18n/ui';
 
 interface Props {
@@ -40,6 +42,12 @@ const listed = kind === 'series' ? seriesOrdered(group.entries) : group.entries;
 const isTechnical = kind !== 'severity' && kind !== 'series';
 const display = kind === 'severity' ? t(`severity.${group.value}` as UIKey) : group.value;
 const title = `${display} · ${t('writeups.title')} — 0xMARO`;
+
+const breadcrumb = breadcrumbSchema(lang, Astro.site!, [
+  { name: t('breadcrumb.home'), path: '/' },
+  { name: t('writeups.title'), path: '/writeups' },
+  { name: display, path: `/writeups/${kind}/${group.slug}` },
+]);
 ---
 
 <Base lang={lang} title={title} description={t('writeups.desc')}>
@@ -52,6 +60,7 @@ const title = `${display} · ${t('writeups.title')} — 0xMARO`;
     title={title}
     description={t('writeups.desc')}
   />
+  <JsonLd slot="head" data={breadcrumb} />
   <div class="wrap archive">
     <header class="archive__head">
       <span class="archive__eyebrow ltr">{t('writeups.eyebrow')}</span>

@@ -4,7 +4,10 @@ export const site = {
   brand: '0xMARO',
   domain: 'https://0xmaro.dev',
   social: {
-    github: '', // TODO(proof): real GitHub profile URL
+    // Owner-supplied and verified (plan/05 Phase 5): the sameAs allowlist for
+    // JSON-LD and the proof-gated footer/About links. No third profile.
+    github: 'https://github.com/0xmaroo',
+    linkedin: 'https://www.linkedin.com/in/amar-mohamed-0xmaro',
   },
 } as const;
 

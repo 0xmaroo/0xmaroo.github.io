@@ -24,6 +24,13 @@ const feedHref = lang === 'ar' ? '/rss-ar.xml' : '/rss.xml';
         </a>
       )
     }
+    {
+      site.social.linkedin && (
+        <a class="ltr" href={site.social.linkedin} rel="me">
+          {t('footer.linkedin')}
+        </a>
+      )
+    }
     <span class="foot__end">{t('footer.note')}</span>
   </div>
 </footer>

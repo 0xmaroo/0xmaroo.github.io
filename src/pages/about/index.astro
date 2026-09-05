@@ -1,9 +1,11 @@
 ---
 import Base from '../../layouts/Base.astro';
 import Seo from '../../components/Seo.astro';
+import JsonLd from '../../components/seo/JsonLd.astro';
 import { useTranslations } from '../../i18n/utils';
 import { site } from '../../config/site';
 import { isRealProof } from '../../lib/proof';
+import { personSchema } from '../../lib/schema';
 
 // Structure only — every prose string is the TODO(copy) placeholder until the
 // owner writes it (CLAUDE.md: never invent a fact, a rank, or a claim).
@@ -11,11 +13,11 @@ const lang = 'en';
 const t = useTranslations(lang);
 
 // "No proof, no render" (src/lib/proof.ts): a profile link only appears once
-// it points at a real external URL. site.social.github is '' today, so the
-// row renders nothing — same discipline as the footer.
-const socialLinks = [{ label: t('footer.github'), url: site.social.github }].filter((l) =>
-  isRealProof(l.url)
-);
+// it points at a real external URL — same discipline as the footer.
+const socialLinks = [
+  { label: t('footer.github'), url: site.social.github },
+  { label: t('footer.linkedin'), url: site.social.linkedin },
+].filter((l) => isRealProof(l.url));
 ---
 
 <Base lang={lang} title={`${t('about.title')} — 0xMARO`} description={t('about.desc')}>
@@ -26,6 +28,7 @@ const socialLinks = [{ label: t('footer.github'), url: site.social.github }].fil
     title={`${t('about.title')} — 0xMARO`}
     description={t('about.desc')}
   />
+  <JsonLd slot="head" data={personSchema()} />
   <div class="wrap about">
     <header class="about__head">
       <span class="about__eyebrow ltr">{t('about.eyebrow')}</span>

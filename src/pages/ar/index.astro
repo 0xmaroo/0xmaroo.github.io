@@ -1,6 +1,7 @@
 ---
 import Base from '../../layouts/Base.astro';
 import Seo from '../../components/Seo.astro';
+import JsonLd from '../../components/seo/JsonLd.astro';
 import Rail from '../../components/Rail.astro';
 import DiffHero from '../../components/hero/DiffHero.astro';
 import StatStrip from '../../components/proof/StatStrip.astro';
@@ -9,6 +10,7 @@ import { getCollection } from 'astro:content';
 import { caseNumbers, featuredOnHome, slugOf } from '../../lib/content';
 import { useTranslations } from '../../i18n/utils';
 import { siteDescription } from '../../config/site';
+import { personSchema, websiteSchema } from '../../lib/schema';
 
 const lang = 'ar';
 const t = useTranslations(lang);
@@ -25,6 +27,9 @@ const numbers = caseNumbers(entries);
     title="0xMARO — مخطط واختراق"
     description={siteDescription[lang]}
   />
+  <!-- WebSite lives on the home page of each locale only; Person on home + About. -->
+  <JsonLd slot="head" data={websiteSchema(lang, Astro.site!)} />
+  <JsonLd slot="head" data={personSchema()} />
   <Rail />
   <div class="wrap hero">
     <p class="hero__file ltr">{t('hero.file')}</p>
