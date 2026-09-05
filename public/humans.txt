@@ -1,0 +1,20 @@
+/* humans.txt — https://humanstxt.org convention (plan/02-architecture.md §2.2).
+   Every line below is a verifiable fact (plan/08-quality-bar.md §8.2); anything
+   not yet known stays TODO(copy) rather than guessed. */
+
+/* TEAM */
+
+	0xMARO
+		Role: TODO(copy)
+		Location: TODO(copy)
+		GitHub: https://github.com/0xmaroo
+		LinkedIn: https://www.linkedin.com/in/amar-mohamed-0xmaro
+
+/* SITE */
+
+	Last update: TODO(copy)
+		Language: English, Arabic
+		Standards: HTML, CSS, MDX
+		Components: Astro, TypeScript
+		Software: Pagefind
+		Hosting: GitHub Pages
