@@ -47,3 +47,15 @@ subset IBMPlexSansArabic-Regular.ttf    "$ARAB_FEATURES" "$ARAB" IBMPlexSansArab
 subset IBMPlexSansArabic-Medium.ttf     "$ARAB_FEATURES" "$ARAB" IBMPlexSansArabic-500-arab.woff2
 subset IBMPlexSansArabic-SemiBold.ttf   "$ARAB_FEATURES" "$ARAB" IBMPlexSansArabic-600-arab.woff2
 subset IBMPlexSansArabic-Bold.ttf       "$ARAB_FEATURES" "$ARAB" IBMPlexSansArabic-700-arab.woff2
+
+# Language-switch badge: the single glyph ع (U+0639), nothing else.
+#
+# The switch and the command palette show the other language's short label on
+# every page. Under the bare `[lang='ar']` rule in typography.css that one
+# character resolved to the full Arabic family, so every ENGLISH page pulled a
+# 38KB face to draw it. This 1.2KB face carries the glyph alone and its
+# unicode-range keeps it the only candidate.
+#
+# An isolated ع has no joining behaviour, so `isol` is the only feature needed —
+# none of the init/medi/fina machinery the running-text faces require.
+subset IBMPlexSansArabic-SemiBold.ttf "isol" "U+0639" IBMPlexSansArabic-600-badge.woff2

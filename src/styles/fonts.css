@@ -156,3 +156,25 @@
     U+2200-22FF, U+2300-23FF, U+2500-25FF, U+2600-26FF, U+0600-06FF, U+0750-077F, U+FB50-FDFF,
     U+FE70-FEFF;
 }
+
+/*
+ * Language-switch badge — a single glyph, ع (U+0639).
+ *
+ * The switch and the command palette show the other language's short label on
+ * every page. Under the bare `[lang='ar']` rule in typography.css that one
+ * character resolved to the full 'IBM Plex Sans Arabic' family, so every
+ * ENGLISH page downloaded a 38KB Arabic face to draw it. This face carries
+ * that glyph and nothing else (1.2KB), and its unicode-range makes it the only
+ * candidate, so the full family is never requested on a Latin page.
+ *
+ * An isolated ع has no joining behaviour, so `isol` is the only layout feature
+ * it needs — see scripts/subset-fonts.sh.
+ */
+@font-face {
+  font-family: 'IBM Plex Sans Arabic Badge';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('/fonts/IBMPlexSansArabic-600-badge.woff2') format('woff2');
+  unicode-range: U+0639;
+}

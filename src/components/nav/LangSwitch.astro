@@ -18,15 +18,14 @@ const isAr = lang === 'ar';
 <nav class="lang" aria-label={t('lang.switch')}>
   <a
     href={enHref}
-    lang="en"
     class="ltr"
-    aria-label={t('lang.en')}
+    aria-label={t('lang.toEn')}
     aria-current={lang === 'en' ? 'true' : undefined}
   >
-    EN
+    <span lang="en" aria-hidden="true">{t('lang.shortEn')}</span>
   </a>
-  <a href={arHref} lang="ar" aria-label={t('lang.ar')} aria-current={isAr ? 'true' : undefined}>
-    ع
+  <a href={arHref} aria-label={t('lang.toAr')} aria-current={isAr ? 'true' : undefined}>
+    <span lang="ar" class="lang__badge" aria-hidden="true">{t('lang.shortAr')}</span>
   </a>
 </nav>
 
@@ -36,6 +35,11 @@ const isAr = lang === 'ar';
     border: var(--hairline) solid var(--ink-600);
     border-radius: var(--radius);
     overflow: hidden;
+  }
+
+  /* The one-glyph face: keeps ع off the full Arabic family (src/styles/fonts.css). */
+  .lang__badge {
+    font-family: var(--f-badge-ar);
   }
 
   .lang a {

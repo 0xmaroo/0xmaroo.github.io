@@ -44,6 +44,8 @@
   --f-body: 'IBM Plex Sans', system-ui, -apple-system, sans-serif;
   --f-body-ar: 'IBM Plex Sans Arabic', 'IBM Plex Sans', system-ui, sans-serif;
   --f-cond: 'IBM Plex Sans Condensed', 'IBM Plex Sans', system-ui, sans-serif;
+  /* One-glyph face for the ع language badge — never pulls the full Arabic family. */
+  --f-badge-ar: 'IBM Plex Sans Arabic Badge', system-ui, sans-serif;
   --f-code: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
 
   /* ── UI text sizes (not part of the type scale) ── */

@@ -1,6 +1,6 @@
 ---
 import { getRelativeLocaleUrl } from 'astro:i18n';
-import { languages, type Language, type UIKey } from '../../i18n/ui';
+import { type Language, type UIKey } from '../../i18n/ui';
 import { localeHrefs, useTranslations } from '../../i18n/utils';
 import { sections, sectionPaths } from '../../config/site';
 
@@ -82,9 +82,17 @@ const cfg = {
           </a>
         ))
       }
-      <a class="palette__option" role="option" id="po-lang" href={langHref} lang={other}>
+      <a
+        class="palette__option"
+        role="option"
+        id="po-lang"
+        href={langHref}
+        aria-label={other === 'ar' ? t('lang.toAr') : t('lang.toEn')}
+      >
         <span class="palette__opt-label">{t('lang.switch')}</span>
-        <span class="palette__opt-note" lang={other}>{languages[other]}</span>
+        <span class="palette__opt-note lang__badge" lang={other} aria-hidden="true">
+          {other === 'ar' ? t('lang.shortAr') : t('lang.shortEn')}
+        </span>
       </a>
     </div>
 
@@ -298,6 +306,11 @@ const cfg = {
 </script>
 
 <style>
+  /* One-glyph face for ع — see src/styles/fonts.css. */
+  .lang__badge {
+    font-family: var(--f-badge-ar);
+  }
+
   .palette {
     margin: auto;
     padding: 0;

@@ -23,6 +23,11 @@ const en = {
   'lang.switch': 'Switch language',
   'lang.en': 'English',
   'lang.ar': 'العربية',
+  /* Visual labels are one token each; the accessible name below stays a full sentence. */
+  'lang.shortEn': 'EN',
+  'lang.shortAr': 'ع',
+  'lang.toEn': 'Switch to English',
+  'lang.toAr': 'Switch to Arabic',
   'meta.home':
     'Application security, written by someone who ships the code. Every writeup ends with a fix.',
   'hero.file': '~/identity.txt',
@@ -195,6 +200,10 @@ const ar: Record<UIKey, string> = {
   'lang.switch': 'بدّل اللغة',
   'lang.en': 'English',
   'lang.ar': 'العربية',
+  'lang.shortEn': 'EN',
+  'lang.shortAr': 'ع',
+  'lang.toEn': 'التبديل إلى الإنجليزية',
+  'lang.toAr': 'التبديل إلى العربية',
   'meta.home': 'أمن تطبيقات مكتوب بقلم واحد بيكتب الكود نفسه. كل تحليل بينتهي بإصلاح حقيقي.',
   'hero.file': '~/identity.txt',
   'hero.line1': 'بابني أنظمة شغّالة.',
