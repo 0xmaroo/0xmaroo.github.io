@@ -58,6 +58,17 @@ export const forSurface = <T extends SurfaceEntry>(
     .sort((a, b) => b.data.publishedAt.getTime() - a.data.publishedAt.getTime());
 
 /**
+ * Locale-free paths (`/writeups/foo`) of every entry that has its own page in
+ * `lang`. Hand-written internal references (arsenal `usedOn`) check against
+ * this so a draft, or a post not yet translated, never becomes a dead link.
+ */
+export const livePaths = (writeups: Writeup[], projects: Project[], lang: Lang): Set<string> =>
+  new Set([
+    ...forSurface(writeups, 'direct', lang).map((e) => `/writeups/${slugOf(e)}`),
+    ...forSurface(projects, 'direct', lang).map((e) => `/projects/${slugOf(e)}`),
+  ]);
+
+/**
  * Locale-independent slug derived from the on-disk id (`en/foo.mdx` → `foo`).
  * Structural on purpose: every collection that follows the one-folder-per-
  * language convention (plan/02 §2.3) produces ids this helper understands.

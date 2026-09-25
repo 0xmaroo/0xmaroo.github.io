@@ -4,10 +4,13 @@ import Seo from '../../../components/Seo.astro';
 import { getCollection } from 'astro:content';
 import { getRelativeLocaleUrl } from 'astro:i18n';
 import { useTranslations } from '../../../i18n/utils';
+import { livePaths } from '../../../lib/content';
 
 const lang = 'ar';
 const t = useTranslations(lang);
 const arsenal = await getCollection('arsenal');
+// A usedOn target that is a draft (or untranslated) renders as the dash, not a dead link.
+const live = livePaths(await getCollection('writeups'), await getCollection('projects'), lang);
 ---
 
 <Base lang={lang} title={`${t('arsenal.title')} — 0xMARO`} description={t('arsenal.desc')}>
@@ -48,7 +51,7 @@ const arsenal = await getCollection('arsenal');
                   <ul class="arsenal__used">
                     {d.data.rows.map((r) => (
                       <li>
-                        {r.usedOn ? (
+                        {r.usedOn && live.has(r.usedOn) ? (
                           <a href={getRelativeLocaleUrl(lang, r.usedOn)}>{r.usedOn}</a>
                         ) : (
                           <span class="arsenal__none" aria-hidden="true">
