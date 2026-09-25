@@ -38,13 +38,21 @@ const topics = documentedTopics(
   <JsonLd slot="head" data={websiteSchema(lang, Astro.site!)} />
   <JsonLd slot="head" data={personSchema(topics)} />
   <Rail />
-  <div class="wrap hero">
+  <!-- Indexed so Pagefind never falls back to crawling every page (404,
+       search, noindex placeholders) while no writeup carries data-pagefind-body. -->
+  <div class="wrap hero" data-pagefind-body>
     <p class="hero__file ltr">{t('hero.file')}</p>
     <DiffHero lang={lang} />
     <p class="hero__sub">{t('hero.sub')}</p>
-    <div class="hero__cta">
-      <a class="btn btn--primary" href="#cases">{t('cta.casefiles')}</a>
-    </div>
+    {
+      featured.length > 0 && (
+        <div class="hero__cta">
+          <a class="btn btn--primary" href="#cases">
+            {t('cta.casefiles')}
+          </a>
+        </div>
+      )
+    }
     <StatStrip lang={lang} />
   </div>
 
