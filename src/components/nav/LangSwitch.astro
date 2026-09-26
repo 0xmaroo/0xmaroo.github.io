@@ -4,13 +4,15 @@ import type { Language } from '../../i18n/ui';
 
 interface Props {
   lang: Language;
+  /** See `localeHrefs()` — where to go when this page has no counterpart. */
+  fallback?: string;
 }
 
-const { lang } = Astro.props;
+const { lang, fallback } = Astro.props;
 const t = useTranslations(lang);
 
 // Keep the visitor on the same page when switching language (AGENT-KICKOFF §1).
-const { en: enHref, ar: arHref } = localeHrefs(Astro.url.pathname);
+const { en: enHref, ar: arHref } = localeHrefs(Astro.url.pathname, fallback);
 
 const isAr = lang === 'ar';
 ---

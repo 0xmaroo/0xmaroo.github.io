@@ -6,9 +6,10 @@ import { sections, sectionPaths } from '../../config/site';
 
 interface Props {
   lang: Language;
+  langFallback?: string;
 }
 
-const { lang } = Astro.props;
+const { lang, langFallback } = Astro.props;
 const t = useTranslations(lang);
 const other: Language = lang === 'en' ? 'ar' : 'en';
 
@@ -23,7 +24,7 @@ const navItems = (Object.entries(sections) as SectionEntry[])
   }));
 
 // Same-page language switch, same source of truth as LangSwitch.
-const { [other]: langHref } = localeHrefs(Astro.url.pathname);
+const { [other]: langHref } = localeHrefs(Astro.url.pathname, langFallback);
 
 // Everything the client script needs, passed as JSON — no copy in the script.
 const cfg = {

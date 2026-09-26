@@ -21,4 +21,15 @@ describe('localeHrefs — the language switch', () => {
   it('does not strip a path that merely starts with the letters "ar"', () => {
     expect(localeHrefs('/arsenal/')).toEqual({ en: '/arsenal/', ar: '/ar/arsenal/' });
   });
+
+  it("sends a one-language page to the other locale's fallback, not a 404", () => {
+    expect(localeHrefs('/writeups/en-only/', '/writeups')).toEqual({
+      en: '/writeups/en-only/',
+      ar: '/ar/writeups/',
+    });
+    expect(localeHrefs('/ar/notes/ar-only/', '/notes')).toEqual({
+      en: '/notes/',
+      ar: '/ar/notes/ar-only/',
+    });
+  });
 });

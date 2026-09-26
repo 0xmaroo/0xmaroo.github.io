@@ -14,9 +14,14 @@ interface Props {
   lang: Language;
   title: string;
   description?: string;
+  /**
+   * Locale-free path the language switch uses when this page has no version
+   * in the other language (e.g. '/writeups' for an English-only writeup).
+   */
+  langFallback?: string;
 }
 
-const { lang, title, description } = Astro.props;
+const { lang, title, description, langFallback } = Astro.props;
 const t = useTranslations(lang);
 const dir = lang === 'ar' ? 'rtl' : 'ltr';
 const bodyFont =
@@ -60,11 +65,11 @@ const bodyFont =
   </head>
   <body>
     <a class="skip" href="#main">{t('skip')}</a>
-    <Header lang={lang} />
+    <Header lang={lang} langFallback={langFallback} />
     <main id="main" tabindex="-1">
       <slot />
     </main>
     <Footer lang={lang} />
-    <CommandPalette lang={lang} />
+    <CommandPalette lang={lang} langFallback={langFallback} />
   </body>
 </html>

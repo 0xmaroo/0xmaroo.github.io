@@ -81,7 +81,12 @@ const breadcrumb = breadcrumbSchema(lang, Astro.site!, [
 ]);
 ---
 
-<Base lang={lang} title={`${data.title} — 0xMARO`} description={description}>
+<Base
+  lang={lang}
+  title={`${data.title} — 0xMARO`}
+  description={description}
+  langFallback={translation ? undefined : '/projects'}
+>
   <Seo
     slot="head"
     lang={lang}

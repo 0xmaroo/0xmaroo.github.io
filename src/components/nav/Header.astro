@@ -7,9 +7,10 @@ import LangSwitch from './LangSwitch.astro';
 
 interface Props {
   lang: Language;
+  langFallback?: string;
 }
 
-const { lang } = Astro.props;
+const { lang, langFallback } = Astro.props;
 const t = useTranslations(lang);
 
 type SectionEntry = [keyof typeof sections, { enabled: boolean; inNav: boolean }];
@@ -47,7 +48,7 @@ const navItems = (Object.entries(sections) as SectionEntry[])
         <span class="nav__search-label">{t('palette.open')}</span>
         <kbd class="nav__search-kbd ltr" data-palette-kbd aria-hidden="true"></kbd>
       </button>
-      <LangSwitch lang={lang} />
+      <LangSwitch lang={lang} fallback={langFallback} />
     </div>
   </div>
 </header>
