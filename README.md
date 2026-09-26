@@ -20,6 +20,7 @@
 | 06 | [`plan/06-content-backlog.md`](plan/06-content-backlog.md) | أول 18 مقال محدّدين بالاسم من إنجازاتك الحقيقية |
 | 07 | [`plan/07-seo-and-growth.md`](plan/07-seo-and-growth.md) | SEO تقني، structured data، حلقة LinkedIn، RSS، Newsletter |
 | 08 | [`plan/08-quality-bar.md`](plan/08-quality-bar.md) | Definition of Done: a11y، performance، **security headers A+** |
+| 09 | [`plan/09-next.md`](plan/09-next.md) | **بعد الإطلاق:** اللي موقوف على المالك، الإضافات المميزة (F-12 → F-18)، والترتيب |
 
 **Prototype:** [`prototype/index.html`](prototype/index.html) — افتحه في المتصفح.
 ده مش الموقع النهائي، ده **إثبات للهوية البصرية**: الـ hero، الـ case file card، الـ arsenal، الـ timeline، وزرار AR/EN بيقلب الموقع RTL فعلاً.
