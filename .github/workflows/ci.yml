@@ -40,6 +40,8 @@ jobs:
         run: npm run lint
       - name: Type check
         run: npm run check
+      - name: Unit tests (src/lib)
+        run: npm test
       - name: Build (Astro + Pagefind)
         run: ALLOW_TODO_COPY=1 npm run build
         # ALLOW_TODO_COPY is set HERE ONLY. The `code` job tests code, not

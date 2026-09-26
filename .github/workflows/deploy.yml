@@ -37,6 +37,10 @@ jobs:
           cache: npm
       - name: Install dependencies
         run: npm ci
+      - name: Unit tests (src/lib)
+        # The visibility gate, the language switch and the proof layer are
+        # tested before anything is built — a regression never deploys.
+        run: npm test
       - name: Build (Astro + Pagefind)
         run: npm run build
       - name: Upload Pages artifact
