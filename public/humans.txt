@@ -5,14 +5,14 @@
 /* TEAM */
 
 	0xMARO
-		Role: TODO(copy)
+		Role: Full-stack developer, moving into application security
 		Location: TODO(copy)
 		GitHub: https://github.com/0xmaroo
 		LinkedIn: https://www.linkedin.com/in/amar-mohamed-0xmaro
 
 /* SITE */
 
-	Last update: TODO(copy)
+	Last update: 2026-09-26
 		Language: English, Arabic
 		Standards: HTML, CSS, MDX
 		Components: Astro, TypeScript

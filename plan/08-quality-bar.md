@@ -34,7 +34,7 @@
 ## 8.2 `/.well-known/security.txt` (RFC 9116)
 
 ```
-Contact: mailto:__TODO(copy)-عند-المالك-عنوان-فعلي-بيتحكم-فيه-اليوم__
+Contact: mailto:its.0xmaro@gmail.com
 Expires: 2027-01-01T00:00:00.000Z
 Preferred-Languages: en, ar
 Canonical: https://0xmaroo.github.io/.well-known/security.txt

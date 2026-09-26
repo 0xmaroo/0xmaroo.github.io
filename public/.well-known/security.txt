@@ -1,4 +1,4 @@
-Contact: mailto:TODO(copy)-owner-real-contact-address
+Contact: mailto:its.0xmaro@gmail.com
 Expires: 2027-01-01T00:00:00.000Z
 Preferred-Languages: en, ar
 Canonical: https://0xmaroo.github.io/.well-known/security.txt
