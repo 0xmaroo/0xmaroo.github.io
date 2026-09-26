@@ -1,0 +1,197 @@
+---
+title: 'My search index was publishing the pages I told it to hide'
+summary: 'Twice on this site, a static search index quietly ignored the visibility rules every other surface obeyed. Root cause, the dead ends, and the one-line fix.'
+lang: 'en'
+publishedAt: 2026-09-26
+category: 'web'
+tags: ['pagefind', 'astro', 'information-disclosure', 'static-sites']
+target: '0xmaroo.github.io — self-built'
+targetType: 'own-system'
+cwe: ['CWE-200']
+owasp: ['A01:2021']
+severity: 'low'
+status: 'patched'
+hasFix: true
+toolsUsed: ['Pagefind', 'Astro', 'grep']
+visibility:
+  draft: false
+  featured: true
+---
+
+The search box on this site could list pages that the RSS feed, the sitemap and the archive all
+agreed did not exist. Nothing private reached production, but the same class of bug showed up
+twice, in two different shapes, and both times every other check was green.
+
+## 01 — The target
+
+This site. It is an Astro build deployed to GitHub Pages: static HTML, no server, no database.
+Search is [Pagefind](https://pagefind.app), which runs after the build, reads the generated HTML
+and writes a static index that the browser queries.
+
+Every entry carries a visibility block:
+
+<Payload
+  lang="yaml"
+  code={`visibility:
+  draft: false      # true → never built in production
+  unlisted: false   # built, reachable by link, listed nowhere
+  hideFrom: []      # e.g. ['search', 'rss']`}
+/>
+
+Every listing surface (home, archive, RSS, sitemap, related posts) reads entries through one
+function, `forSurface()`, so a single frontmatter line hides a post everywhere. That is the
+contract. It has one blind spot: search does not read entries. It reads HTML.
+
+## 02 — Recon
+
+The question was simple: which surfaces decide visibility from the content collection, and which
+decide it from the built output? Listing every consumer of the collections and every
+post-build step gave a short answer.
+
+<Terminal
+  title="where does visibility get decided?"
+  code={`$ grep -rn "forSurface" src/pages | wc -l      # collection-driven surfaces
+$ grep -rn "data-pagefind-body" src           # the only input search sees`}
+/>
+
+RSS, sitemap and archive are generated from data, so `forSurface()` covers them. Pagefind never
+sees the data. Its only input is an attribute in the markup: `data-pagefind-body`. Whatever
+carries that attribute gets indexed. So the real visibility rule for search is "which templates
+emit `data-pagefind-body`, and under what condition".
+
+## 03 — The bug
+
+**Instance one: a layout that forgot the condition.** The writeup layout emitted the attribute
+only for visible posts. The project layout, added later, emitted it unconditionally:
+
+<Payload lang="astro" code={`<div class="project__content prose" data-pagefind-body>`} />
+
+An `unlisted` project, or one with `hideFrom: ['search']`, would still be indexed and returned
+as a search result. The page would be missing from the sitemap and from RSS, but anyone could
+find it by typing a word it contained. The bug was live from 2026-08-16 to 2026-09-05.
+
+**Instance two: a fallback nobody wrote down in the template.** Pagefind has a documented
+default: if _no_ page on the site carries `data-pagefind-body`, it indexes the whole `<body>` of
+_every_ page. When this site launched with every post still in draft, not a single page carried
+the attribute, so Pagefind fell back and indexed all 22 built pages: the 404 pages, the search
+page itself, and pages marked `noindex` because their copy was still a placeholder.
+
+Both are CWE-200, exposure of information to an actor who was not meant to see it. That falls
+under OWASP A01:2021. Both happened because two systems each had a sensible rule and the rules
+did not agree.
+
+## 04 — Exploitation
+
+No secret was exposed, and that matters for the severity. `unlisted` is not access control. The
+page is public by design, just not advertised. What broke was a promise: "this is reachable
+only if I hand you the link". Search handed everyone the link.
+
+Reproduction for instance one, on a local build:
+
+<Terminal
+  title="instance one — flip a project to unlisted"
+  code={`# before the fix: project marked unlisted, rebuilt
+$ npm run build   # English index: 4 pages — the unlisted one included
+# after the fix, same frontmatter
+$ npm run build   # English index: 3 pages`}
+/>
+
+Reproduction for instance two, from the launch build itself:
+
+<Terminal
+  title="instance two — zero pages opt in"
+  code={`$ npm run build
+  Indexed 22 pages       # every page, noindex ones included
+# after the fix
+$ npm run build
+  Indexed 2 pages        # home, EN + AR`}
+/>
+
+On a site whose unlisted pages held real material, such as an embargoed disclosure or a draft
+shared with a vendor for review, instance one would have been a genuine leak.
+
+## 05 — Dead ends
+
+<DeadEnd>
+
+**`data-pagefind-ignore` on the hidden page.** This was the original plan for hiding a page from
+search, and it does not work. At Pagefind the attribute is element-scoped. It removes an element
+from the indexed text but does not remove the page from the index. The page still appears, just
+with less text.
+
+</DeadEnd>
+
+<DeadEnd>
+
+**`<meta name="robots" content="noindex">`.** Those pages were already `noindex`. That is an
+instruction to crawlers, and Pagefind is not a crawler. Instance two indexed them anyway.
+
+</DeadEnd>
+
+<DeadEnd>
+
+**Relying on the existing index check.** The build already failed on an _empty_ index, a guard
+against search silently shipping with nothing in it. It passed happily at 22 pages. A check for
+"not empty" says nothing about "not too much".
+
+</DeadEnd>
+
+<DeadEnd>
+
+**A plain `grep` for the attribute, in the new guard.** The first version of the exact-count check
+matched `data-pagefind-body` anywhere in a file, and this article quotes the attribute a dozen
+times inside code blocks. A page that only _talks about_ opting in would have counted as opting
+in. The guard now matches the attribute only inside a real opening tag.
+
+</DeadEnd>
+
+## 06 — The fix
+
+Instance one: gate the attribute on the same visibility fields the rest of the site uses.
+Removing `data-pagefind-body` is the mechanism, not adding an ignore flag.
+
+<FixDiff
+  before={`<div class="project__content prose" data-pagefind-body>`}
+  after={`---
+const isUnlisted = data.visibility.unlisted;
+const hideFromSearch = data.visibility.hideFrom.includes('search');
+const pagefindIgnore = isUnlisted || hideFromSearch;
+---
+<div class="project__content prose"
+     data-pagefind-body={pagefindIgnore ? undefined : ''}>`}
+/>
+
+In Astro, an attribute set to `undefined` is not rendered at all, and one set to `''` renders
+bare. The ternary is the whole switch.
+
+Instance two: make sure at least one real, indexable page always opts in, so the fallback can
+never trigger. The home hero is public in every state of the site:
+
+<FixDiff before={`<div class="wrap hero">`} after={`<div class="wrap hero" data-pagefind-body>`} />
+
+Then close the gap that let both through. The build now fails unless the index holds _exactly_
+the pages that opted in, and no page may opt in while it tells crawlers `noindex`:
+
+<Payload
+  lang="bash"
+  code={`OPTED=$(grep -rlE --include='*.html' '<[a-z][^<>]* data-pagefind-body(=""|[ >])' dist | wc -l)
+if [ "$TOTAL" -ne "$OPTED" ]; then
+  echo "ERROR: pagefind indexed $TOTAL page(s) but $OPTED carry data-pagefind-body" >&2
+  exit 1
+fi`}
+/>
+
+## 07 — What it teaches
+
+**Every consumer of your content needs the same visibility rule, and the ones that read _output_
+instead of _data_ are the ones that drift.** Put the rule in one function for everything that
+reads data. For everything that reads HTML (search, link checkers, feed readers), the template is
+the policy, so review templates as policy.
+
+Two habits came out of this:
+
+- **Know your tool's zero-state.** "What happens when nothing is marked?" is a question worth
+  asking of every opt-in system. Pagefind's answer was "everything", which is the opposite of
+  what opt-in suggests.
+- **Guard both edges.** A check that the index is not empty is half a check. The useful
+  assertion is that the index contains exactly the pages the visibility rules allow.

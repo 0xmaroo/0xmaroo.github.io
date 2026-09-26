@@ -2,7 +2,7 @@
   "ci": {
     "collect": {
       "staticDistDir": "dist",
-      "url": ["/", "/ar/", "/arsenal/"]
+      "url": ["/", "/ar/", "/writeups/search-index-leaked-hidden-pages/"]
     },
     "assert": {
       "assertions": {
