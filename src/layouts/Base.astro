@@ -8,6 +8,7 @@ import Header from '../components/nav/Header.astro';
 import Footer from '../components/Footer.astro';
 import CommandPalette from '../components/nav/CommandPalette.astro';
 import { useTranslations } from '../i18n/utils';
+import { csp, referrerPolicy } from '../config/security';
 import type { Language } from '../i18n/ui';
 
 interface Props {
@@ -35,11 +36,8 @@ const bodyFont =
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <!-- Security meta — plan/08-quality-bar.md §8.1. Must precede every
          link/script/title: a meta CSP only governs what follows it. -->
-    <meta
-      http-equiv="Content-Security-Policy"
-      content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self'; base-uri 'self'; form-action 'self'; object-src 'none'; upgrade-insecure-requests"
-    />
-    <meta name="referrer" content="strict-origin-when-cross-origin" />
+    <meta http-equiv="Content-Security-Policy" content={csp} />
+    <meta name="referrer" content={referrerPolicy} />
     <meta name="generator" content={Astro.generator} />
     <title>{title}</title>
     {description && <meta name="description" content={description} />}
@@ -54,7 +52,7 @@ const bodyFont =
          ("one domain only"): static.cloudflareinsights.com joins script-src and
          cloudflareinsights.com joins connect-src; every other directive stays
          'self'. Switching it on is a copy-paste of the two lines below:
-         1) replace the CSP content attribute with the string under "CSP",
+         1) add the two domains to script-src / connect-src in src/config/security.ts,
          2) uncomment the beacon script.
 
     <script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "TOKEN_HERE"}'></script>
