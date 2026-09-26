@@ -24,4 +24,22 @@ if [ -z "$TOTAL" ] || [ "$TOTAL" -eq 0 ]; then
   exit 1
 fi
 
-echo "pagefind: $TOTAL indexed record(s)"
+# The other edge: "not empty" says nothing about "not too much". With zero
+# pages carrying data-pagefind-body, Pagefind silently indexes EVERY page
+# (404, search, noindex placeholders) — see the writeup
+# search-index-leaked-hidden-pages. So the index must hold exactly the pages
+# that opted in, and no page may opt in while telling crawlers noindex.
+OPTED=$(grep -rlE --include='*.html' '<[a-z][^<>]* data-pagefind-body(=""|[ >])' dist | wc -l)
+if [ "$TOTAL" -ne "$OPTED" ]; then
+  echo "ERROR: pagefind indexed $TOTAL page(s) but $OPTED carry data-pagefind-body — fallback indexing?" >&2
+  exit 1
+fi
+
+CONFLICT=$(grep -rlE --include='*.html' '<[a-z][^<>]* data-pagefind-body(=""|[ >])' dist | xargs -r grep -l 'name="robots" content="noindex' || true)
+if [ -n "$CONFLICT" ]; then
+  echo "ERROR: noindex page(s) opted into search:" >&2
+  echo "$CONFLICT" >&2
+  exit 1
+fi
+
+echo "pagefind: $TOTAL indexed record(s), all opted in, none noindex"
