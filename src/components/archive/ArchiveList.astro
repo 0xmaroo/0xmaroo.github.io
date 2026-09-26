@@ -39,9 +39,10 @@ const parts = seriesParts(archive);
         <WriteupCard
           entry={e}
           caseNo={numbers.get(slugOf(e)) ?? 0}
-          facets={facets}
+          facets={e.data.lang === lang ? facets : undefined}
           seriesPart={parts.get(slugOf(e))}
           headingLevel={2}
+          viewerLang={lang}
         />
       ))}
     </div>

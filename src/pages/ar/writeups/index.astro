@@ -4,13 +4,16 @@ import Seo from '../../../components/Seo.astro';
 import ArchiveFilters from '../../../components/archive/ArchiveFilters.astro';
 import ArchiveList from '../../../components/archive/ArchiveList.astro';
 import { getCollection } from 'astro:content';
-import { forSurface } from '../../../lib/content';
+import { forSurface, forSurfaceWithFallback } from '../../../lib/content';
 import { useTranslations } from '../../../i18n/utils';
 
 const lang = 'ar';
 const t = useTranslations(lang);
 const entries = await getCollection('writeups');
+// Facet routes exist per locale, so filters read own-language entries only;
+// the list itself adds the other language's posts with a badge (plan/01 §1.4).
 const surfaced = forSurface(entries, 'archive', lang);
+const listed = forSurfaceWithFallback(entries, 'archive', lang);
 ---
 
 <Base lang={lang} title={`${t('writeups.title')} — 0xMARO`} description={t('writeups.desc')}>
@@ -27,12 +30,12 @@ const surfaced = forSurface(entries, 'archive', lang);
       <h1 class="archive__title">{t('writeups.title')}</h1>
       <p class="archive__desc">{t('writeups.desc')}</p>
       <p class="archive__count ltr">
-        {t('writeups.count').replace('{0}', String(surfaced.length))}
+        {t('writeups.count').replace('{0}', String(listed.length))}
       </p>
     </header>
 
     <ArchiveFilters lang={lang} entries={surfaced} />
-    <ArchiveList lang={lang} entries={surfaced} all={entries} />
+    <ArchiveList lang={lang} entries={listed} all={entries} />
   </div>
 </Base>
 

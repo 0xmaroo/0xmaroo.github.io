@@ -103,7 +103,10 @@ export const getTranslation = <
  */
 export const caseNumbers = (entries: Writeup[]): Map<string, number> => {
   const earliest = new Map<string, Writeup>();
-  for (const e of entries) {
+  // Drafts are not numbered: counting them would ship CASE 004 as the first
+  // published case and advertise how many unpublished posts exist. Give a
+  // draft its real publishedAt when it ships so existing numbers hold.
+  for (const e of entries.filter(isPublic)) {
     const slug = slugOf(e);
     const current = earliest.get(slug);
     if (!current || e.data.publishedAt < current.data.publishedAt) {
@@ -123,8 +126,27 @@ export const caseNumbers = (entries: Writeup[]): Map<string, number> => {
  * Wrapped in forSurface('home') so drafts, unlisted and hideFrom:['home'] never
  * leak in. If nothing is featured the caller renders no section at all.
  */
+/**
+ * plan/01 §1.4 — a writeup with no version in `lang` still appears on that
+ * locale's lists, carrying its own language badge: not hidden, not a 404.
+ * Both halves go through `forSurface()`, so every visibility rule still holds.
+ */
+export const forSurfaceWithFallback = (
+  entries: Writeup[],
+  surface: Surface,
+  lang: Lang
+): Writeup[] => {
+  const own = forSurface(entries, surface, lang);
+  const covered = new Set(own.map(slugOf));
+  const other: Lang = lang === 'en' ? 'ar' : 'en';
+  const foreign = forSurface(entries, surface, other).filter((e) => !covered.has(slugOf(e)));
+  return [...own, ...foreign].sort(
+    (a, b) => b.data.publishedAt.getTime() - a.data.publishedAt.getTime()
+  );
+};
+
 export const featuredOnHome = (entries: Writeup[], lang: Writeup['data']['lang']): Writeup[] =>
-  forSurface(entries, 'home', lang)
+  forSurfaceWithFallback(entries, 'home', lang)
     .filter((e) => e.data.visibility.featured)
     .slice(0, 3);
 

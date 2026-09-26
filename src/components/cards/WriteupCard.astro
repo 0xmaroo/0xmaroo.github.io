@@ -33,13 +33,20 @@ interface Props {
    * they sit directly under the page `<h1>`, where 3 would skip a level.
    */
   headingLevel?: 2 | 3;
+  /**
+   * Locale of the page the card sits on. When it differs from the entry's
+   * language (the §1.4 fallback), the card carries a language badge and a
+   * `lang` attribute so screen readers switch voice for the title.
+   */
+  viewerLang?: Writeup['data']['lang'];
 }
 
-const { entry, caseNo, facets, seriesPart, headingLevel = 3 } = Astro.props;
+const { entry, caseNo, facets, seriesPart, headingLevel = 3, viewerLang } = Astro.props;
 const Title = `h${headingLevel}` as 'h2' | 'h3';
 const data = entry.data;
 const lang = data.lang;
 const t = useTranslations(lang);
+const foreign = viewerLang !== undefined && viewerLang !== lang;
 const slug = slugOf(entry);
 const statusVariant = {
   patched: 'ok',
@@ -65,9 +72,10 @@ const seriesPartLabel = seriesPart
   : undefined;
 ---
 
-<article class="case">
+<article class="case" lang={foreign ? lang : undefined}>
   <div class="case__top">
     <span class="case__id ltr">{caseId}</span>
+    {foreign && <span class="case__lang ltr">{lang.toUpperCase()}</span>}
     <Stamp variant={statusVariant[data.status]} label={t(`status.${data.status}` as UIKey)} />
   </div>
   <Title class="case__title">
@@ -228,6 +236,14 @@ const seriesPartLabel = seriesPart
   .case__flink:hover {
     color: var(--sulfur-300);
     border-block-end-color: var(--sulfur-400);
+  }
+
+  .case__lang {
+    padding-inline: var(--space-1);
+    border: var(--hairline) solid var(--blue-400);
+    font-family: var(--f-code);
+    font-size: var(--text-2xs);
+    color: var(--blue-400);
   }
 
   .case__fix {
