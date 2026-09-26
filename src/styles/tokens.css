@@ -116,3 +116,32 @@
   --focus-color: var(--sulfur-400);
   --focus-offset: 3px;
 }
+
+/* ── Print (plan/09 F-17) — the same components on paper. Remapping the tokens
+   instead of restyling components keeps every colour in this file (CLAUDE.md
+   rule 2): surfaces go white, text goes near-black, accents darken enough to
+   hold contrast on paper. Sulfur stays the one thing to notice. ── */
+@media print {
+  :root {
+    --ink-900: #ffffff;
+    --ink-800: #f4f5f7;
+    --ink-700: #eceef2;
+    --ink-600: #c9ced8;
+    --line: #d5d9e0;
+    --grid: transparent;
+
+    --text-hi: #0b0d12;
+    --text: #1f2430;
+    --text-lo: #3f4756;
+    --text-dim: #5a6273;
+
+    --blue-400: #1f4fc9;
+    --blue-500: #1f4fc9;
+    --blue-900: #e8eefc;
+
+    --sulfur-300: #6b5410;
+    --sulfur-400: #7a5f0f;
+    --sulfur-500: #7a5f0f;
+    --sulfur-900: #fbf5dd;
+  }
+}

@@ -1,0 +1,53 @@
+/* Print / save-as-PDF (plan/09 F-17). Recruiters print writeups and pass the
+   PDF around a hiring panel — the article has to survive paper: no site
+   chrome, code that wraps instead of clipping, and external links that show
+   where they point. Colours come from the print remap in tokens.css. */
+@media print {
+  header:not(.writeup__head, .project__head),
+  footer:not(.writeup__foot),
+  .skip,
+  .rail,
+  .palette,
+  .writeup__toc,
+  .writeup__related,
+  .writeup__series,
+  .payload__copy {
+    display: none !important;
+  }
+
+  body::before {
+    display: none;
+  }
+
+  /* A grid container is fragmented as a whole row: the body started on page 2
+     and left page 1 half empty. With the TOC hidden it is one column anyway. */
+  .writeup__grid,
+  .project__grid {
+    display: block !important; /* beats the scoped [data-astro-cid] rule */
+  }
+
+  pre,
+  code {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+
+  pre,
+  figure,
+  table,
+  aside {
+    break-inside: avoid;
+  }
+
+  h2,
+  h3 {
+    break-after: avoid;
+  }
+
+  .prose a[href^='http']::after {
+    content: ' (' attr(href) ')';
+    font-size: var(--text-xs);
+    color: var(--text-lo);
+    overflow-wrap: anywhere;
+  }
+}
