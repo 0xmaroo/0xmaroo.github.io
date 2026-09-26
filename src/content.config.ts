@@ -54,6 +54,9 @@ const writeups = defineCollection({
       severity: z.enum(['info', 'low', 'medium', 'high', 'critical']).optional(),
       status: z.enum(['patched', 'disclosed', 'lab-only', 'wip']),
       hasFix: z.boolean().default(false), // does it contain a real code-level fix?
+      // plan/09 F-12: commit URLs where the fix actually landed. Rendered only
+      // when real http(s) (isRealProof); hasFix without one warns at build.
+      fixCommits: z.array(z.string()).default([]),
       toolsUsed: z.array(z.string()).default([]),
       readingTime: z.number().optional(), // computed automatically
 

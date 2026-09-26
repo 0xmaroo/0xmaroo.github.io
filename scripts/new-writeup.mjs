@@ -413,7 +413,12 @@ function buildFile(values) {
     `owasp: ${yamlList(values.owasp)}`,
   ];
   if (values.severity) lines.push(`severity: ${JSON.stringify(values.severity)}`);
-  lines.push(`status: ${JSON.stringify(values.status)}`, 'hasFix: false', 'toolsUsed: []');
+  lines.push(
+    `status: ${JSON.stringify(values.status)}`,
+    'hasFix: false',
+    'fixCommits: []',
+    'toolsUsed: []'
+  );
   if (values.series) lines.push(`series: ${JSON.stringify(values.series)}`, 'seriesOrder: 1');
   lines.push(
     '# optional per the schema, omit until needed: translationOf, updatedAt, cover',

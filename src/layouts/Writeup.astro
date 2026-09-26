@@ -13,6 +13,7 @@ import { getRelativeLocaleUrl } from 'astro:i18n';
 import { getCollection, render } from 'astro:content';
 import type { MarkdownHeading } from 'astro';
 import { useTranslations } from '../i18n/utils';
+import { isRealProof } from '../lib/proof';
 import {
   caseNumbers,
   facetIndex,
@@ -108,6 +109,16 @@ const statusVariant = {
 } as const;
 
 const mdxComponents = { Callout, Payload, FixDiff, DeadEnd, Terminal };
+
+// plan/09 F-12 — "verify this fix": each fix links to the commit it landed in.
+// Only real URLs render (proof layer, F-11); the label is the short SHA.
+const fixCommits = data.fixCommits.filter(isRealProof).map((url) => ({
+  url,
+  label: url.match(/\/commit\/([0-9a-f]{7})/)?.[1] ?? 'commit',
+}));
+if (data.hasFix && fixCommits.length === 0) {
+  console.warn(`[proof] writeup "${slug}" has a fix but no fixCommits URL (plan/09 F-12).`);
+}
 
 const jsonLd = {
   '@context': 'https://schema.org',
@@ -241,6 +252,23 @@ const breadcrumb = breadcrumbSchema(lang, Astro.site!, [
               <div class="fact">
                 <dt>{t('writeup.tools')}</dt>
                 <dd class="ltr">{data.toolsUsed.join(', ')}</dd>
+              </div>
+            )
+          }
+          {
+            fixCommits.length > 0 && (
+              <div class="fact">
+                <dt>{t('writeup.fixCommits')}</dt>
+                <dd class="ltr">
+                  {fixCommits.map((c, i) => (
+                    <>
+                      {i > 0 && ', '}
+                      <a class="fact__link" href={c.url} rel="noreferrer">
+                        {c.label} ↗
+                      </a>
+                    </>
+                  ))}
+                </dd>
               </div>
             )
           }
