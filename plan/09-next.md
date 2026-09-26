@@ -31,7 +31,7 @@
 
 | # | البند | ليه مهم | الوقت منك |
 |---|-------|---------|-----------|
-| 1 | Settings → Pages → Source = **GitHub Actions** | كل push بيطلّع ✗ أحمر من الـ build القديم | دقيقة |
+| 1 | ~~Settings → Pages → Source = **GitHub Actions**~~ ✅ اتعمل 2026-09-26 (متحقق من الـ API: `build_type: workflow`) | — | — |
 | 2 | لينكات الإثبات في `src/data/proof.ts` + `proof:` في `src/content/journey/*.yaml` و`labs/` | الـ StatStrip و§03 Journey و/labs كلهم فاضيين لحد ما دول يتملوا | 15 دقيقة |
 | 3 | خامة مقال GymOS (IDOR) — الكود قبل وبعد، الـ request، اللي جربته | ده مقال الـ positioning في §06 رقم 1 | ساعة كلام |
 | 4 | وصف المشاريع التلاتة (role، stack، إيه اللي بيعمله) | Projects إلزامي بالعربي والإنجليزي §1.4 | ساعة |
@@ -60,7 +60,12 @@
 **معيار القبول:** مقال `hasFix: true` من غير `fixCommit` بيطلع تحذير في الـ build (مش خطأ — الكود
 ممكن يكون private).
 
-### ⭐ F-13 · `/security` — الموقع نفسه كـ case study
+### ⭐ F-13 · `/security` — الموقع نفسه كـ case study · ✅ اتعمل 2026-09-26
+
+> **التنفيذ:** الـ CSP اتنقلت لـ `src/config/security.ts` — `Base.astro` والصفحة بيقروا من نفس
+> المكان (اتأكدت إن الـ CSP المبعوتة حرف بحرف زي الأول على 25 صفحة). `src/lib/posture.ts` بيقرا
+> الـ workflows و`security.txt` و`package.json` والـ tests وقت الـ build. لينك في الـ footer، مش الـ nav.
+> وفيه test بيفشل لو أي action اتضاف من غير SHA.
 
 **الفكرة:** صفحة بتتولد **وقت البناء** من الريبو نفسه: الـ CSP الفعلية اللي اتشحنت، الـ SHAs
 المثبتة في الـ workflows، تاريخ `Expires` في `security.txt`، نتيجة `check-copy` و`check-pagefind`،
