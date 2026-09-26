@@ -2,7 +2,7 @@
   "ci": {
     "collect": {
       "staticDistDir": "dist",
-      "url": ["/", "/writeups/", "/writeups/idor-in-invoice-api/"]
+      "url": ["/", "/ar/", "/arsenal/"]
     },
     "assert": {
       "assertions": {
