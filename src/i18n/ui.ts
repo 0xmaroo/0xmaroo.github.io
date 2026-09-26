@@ -27,8 +27,9 @@ const en = {
   /* Visual labels are one token each; the accessible name below stays a full sentence. */
   'lang.shortEn': 'EN',
   'lang.shortAr': 'ع',
-  'lang.toEn': 'Switch to English',
-  'lang.toAr': 'Switch to Arabic',
+  // Accessible names start with the visible glyph (WCAG 2.5.3 Label in Name).
+  'lang.toEn': 'EN, switch to English',
+  'lang.toAr': 'ع, switch to Arabic',
   'meta.home':
     'Application security, written by someone who ships the code. Every writeup ends with a fix.',
   'hero.file': '~/identity.txt',
@@ -293,8 +294,8 @@ const ar: Record<UIKey, string> = {
   'lang.ar': 'العربية',
   'lang.shortEn': 'EN',
   'lang.shortAr': 'ع',
-  'lang.toEn': 'التبديل إلى الإنجليزية',
-  'lang.toAr': 'التبديل إلى العربية',
+  'lang.toEn': 'EN، التبديل إلى الإنجليزية',
+  'lang.toAr': 'ع، التبديل إلى العربية',
   'meta.home': 'أمن تطبيقات مكتوب بقلم واحد بيكتب الكود نفسه. كل تحليل بينتهي بإصلاح حقيقي.',
   'hero.file': '~/identity.txt',
   'hero.line1': 'بابني أنظمة شغّالة.',
