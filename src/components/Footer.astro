@@ -1,6 +1,7 @@
 ---
 import { useTranslations } from '../i18n/utils';
-import { site } from '../config/site';
+import { getRelativeLocaleUrl } from 'astro:i18n';
+import { site, sectionPaths } from '../config/site';
 import type { Language } from '../i18n/ui';
 
 interface Props {
@@ -15,6 +16,7 @@ const feedHref = lang === 'ar' ? '/rss-ar.xml' : '/rss.xml';
 <footer>
   <div class="wrap foot">
     <span class="foot__brand ltr">{site.brand}</span>
+    <a href={getRelativeLocaleUrl(lang, sectionPaths.security)}>{t('footer.posture')}</a>
     <a class="ltr" href="/.well-known/security.txt">{t('footer.security')}</a>
     <a class="ltr" href={feedHref}>{t('footer.rss')}</a>
     {

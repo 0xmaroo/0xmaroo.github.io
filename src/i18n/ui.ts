@@ -232,6 +232,44 @@ const en = {
   'footer.github': 'github',
   'footer.linkedin': 'linkedin',
   'footer.note': 'Blueprint & Breach',
+  'security.title': 'Security',
+  'security.eyebrow': '§08',
+  'security.desc':
+    'How this site is secured. Every value below is read from the repository at build time, so this page cannot drift from the code.',
+  'security.csp.note':
+    'Sent as a <meta> tag on every page. GitHub Pages cannot set response headers, so this is the strictest policy it allows: no inline script, no inline style, no third-party origin.',
+  'security.referrer': 'Referrer-Policy',
+  'security.col.directive': 'directive',
+  'security.col.value': 'value',
+  'security.limits.title': 'What GitHub Pages cannot send',
+  'security.limits.note':
+    'These need real response headers, and a <meta> tag cannot carry them. They are missing, and this page says so instead of hiding it.',
+  'security.supply.title': 'Supply chain',
+  'security.supply.note':
+    'Every GitHub Action is pinned to a full commit SHA, never a tag that can move. {0} of {1} pinned.',
+  'security.col.action': 'action',
+  'security.col.version': 'version',
+  'security.col.commit': 'commit',
+  'security.col.workflows': 'workflows',
+  'security.unpinned': 'unpinned',
+  'security.gates.title': 'Deploy gates',
+  'security.gates.note':
+    'A deploy runs these in order. Any failure stops it before anything reaches the site.',
+  'gate.tests':
+    'Unit tests for the visibility gate, the proof layer and the language switch: {0} cases.',
+  'gate.build': 'Static build. Drafts are never built.',
+  'gate.copy': 'Placeholder copy never reaches an indexable page.',
+  'gate.links': 'Every internal link and anchor resolves.',
+  'gate.pagefind': 'Builds the search index from the pages that opt in.',
+  'gate.index':
+    'The index holds exactly the pages that opted in: no noindex page, no fallback indexing.',
+  'security.disclosure.title': 'Disclosure',
+  'security.disclosure.note':
+    'Found something in this site? The contact is in security.txt (RFC 9116).',
+  'security.expires': 'expires',
+  'security.daysLeft': '{0} days left',
+  'security.source': 'source ↗',
+  'footer.posture': 'security',
 } as const;
 
 export type UIKey = keyof typeof en;
@@ -456,6 +494,42 @@ const ar: Record<UIKey, string> = {
   'footer.github': 'github',
   'footer.linkedin': 'linkedin',
   'footer.note': 'مخطط واختراق',
+  'security.title': 'الأمان',
+  'security.eyebrow': '§08',
+  'security.desc':
+    'إزاي الموقع ده متأمّن. كل قيمة تحت متقرية من الريبو وقت الـ build، فالصفحة دي مستحيل تختلف عن الكود.',
+  'security.csp.note':
+    'بتتبعت كـ <meta> في كل صفحة. GitHub Pages مش بتسمح بـ response headers، فدي أشد سياسة ممكنة عليها: مفيش inline script، ولا inline style، ولا أي origin خارجي.',
+  'security.referrer': 'Referrer-Policy',
+  'security.col.directive': 'التوجيه',
+  'security.col.value': 'القيمة',
+  'security.limits.title': 'اللي GitHub Pages مش بتقدر تبعته',
+  'security.limits.note':
+    'دول محتاجين response headers حقيقية، والـ <meta> ما بتشيلهمش. هم ناقصين، والصفحة دي بتقول كده بدل ما تخبّيه.',
+  'security.supply.title': 'سلسلة التوريد',
+  'security.supply.note':
+    'كل GitHub Action مثبّت على commit SHA كامل، مش tag ممكن يتحرك. {0} من {1} مثبّتين.',
+  'security.col.action': 'action',
+  'security.col.version': 'الإصدار',
+  'security.col.commit': 'commit',
+  'security.col.workflows': 'workflows',
+  'security.unpinned': 'مش مثبّت',
+  'security.gates.title': 'بوابات النشر',
+  'security.gates.note':
+    'أي deploy بيعدّي على دول بالترتيب. أي واحدة تفشل بتوقفه قبل ما حاجة توصل للموقع.',
+  'gate.tests': 'اختبارات unit لبوابة الإظهار وطبقة الإثبات وتبديل اللغة: {0} حالة.',
+  'gate.build': 'build ستاتيك. الـ drafts عمرها ما بتتبني.',
+  'gate.copy': 'أي نص placeholder عمره ما يوصل لصفحة بتتفهرس.',
+  'gate.links': 'كل لينك داخلي وكل anchor بيوصل لمكان موجود.',
+  'gate.pagefind': 'بيبني فهرس البحث من الصفحات اللي طالبة تدخله بس.',
+  'gate.index':
+    'الفهرس فيه بالظبط الصفحات اللي طلبت: مفيش صفحة noindex، ومفيش فهرسة احتياطية لكل الموقع.',
+  'security.disclosure.title': 'الإبلاغ عن ثغرة',
+  'security.disclosure.note': 'لقيت حاجة في الموقع؟ عنوان التواصل في security.txt (RFC 9116).',
+  'security.expires': 'بينتهي',
+  'security.daysLeft': 'فاضل {0} يوم',
+  'security.source': 'المصدر ↗',
+  'footer.posture': 'الأمان',
 };
 
 export const ui = { en, ar } as const;

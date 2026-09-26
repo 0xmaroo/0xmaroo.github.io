@@ -3,6 +3,8 @@ import type { Language } from '../i18n/ui';
 export const site = {
   brand: '0xMARO',
   domain: 'https://0xmaro.dev',
+  /** Public source repo — /security links every claim to the file behind it. */
+  repo: 'https://github.com/0xmaroo/0xmaroo.github.io',
   social: {
     // Owner-supplied and verified (plan/05 Phase 5): the sameAs allowlist for
     // JSON-LD and the proof-gated footer/About links. No third profile.
@@ -36,6 +38,8 @@ export const sections = {
   hire: { enabled: false, inNav: false },
   about: { enabled: true, inNav: true },
   search: { enabled: true, inNav: false },
+  // plan/09 F-13 — linked from the footer, not the nav.
+  security: { enabled: true, inNav: false },
 } as const satisfies Record<string, SectionConfig>;
 
 export type SectionKey = keyof typeof sections;
@@ -52,6 +56,7 @@ export const sectionPaths: Record<SectionKey, string> = {
   hire: '/hire',
   about: '/about',
   search: '/search',
+  security: '/security',
 };
 
 /** Default page meta per locale. */

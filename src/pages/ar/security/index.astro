@@ -1,0 +1,57 @@
+---
+import Base from '../../../layouts/Base.astro';
+import Seo from '../../../components/Seo.astro';
+import SecurityPosture from '../../../components/proof/SecurityPosture.astro';
+import { useTranslations } from '../../../i18n/utils';
+
+const lang = 'ar';
+const t = useTranslations(lang);
+---
+
+<Base lang={lang} title={`${t('security.title')} — 0xMARO`} description={t('security.desc')}>
+  <Seo
+    slot="head"
+    lang={lang}
+    path="/security"
+    title={`${t('security.title')} — 0xMARO`}
+    description={t('security.desc')}
+  />
+  <div class="wrap archive">
+    <header class="archive__head">
+      <span class="archive__eyebrow ltr">{t('security.eyebrow')}</span>
+      <h1 class="archive__title">{t('security.title')}</h1>
+      <p class="archive__desc">{t('security.desc')}</p>
+    </header>
+
+    <SecurityPosture lang={lang} />
+  </div>
+</Base>
+
+<style>
+  .archive {
+    padding-block: var(--space-7) var(--space-8);
+  }
+
+  .archive__head {
+    border-block-end: var(--hairline) solid var(--line);
+    padding-block-end: var(--space-6);
+  }
+
+  .archive__eyebrow {
+    font-family: var(--f-code);
+    font-size: var(--text-sm);
+    color: var(--blue-500);
+  }
+
+  .archive__title {
+    margin-block-start: var(--space-3);
+  }
+
+  .archive__desc {
+    margin-block-start: var(--space-4);
+    max-width: var(--measure-lead);
+    font-size: var(--step-1);
+    color: var(--text-lo);
+    line-height: var(--lh-lead);
+  }
+</style>
