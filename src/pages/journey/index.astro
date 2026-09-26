@@ -1,28 +1,11 @@
 ---
 import Base from '../../layouts/Base.astro';
 import Seo from '../../components/Seo.astro';
-import { getCollection } from 'astro:content';
-import { surfaceJourney } from '../../lib/proof';
-import { isTodo } from '../../lib/proof';
+import JourneyTimeline from '../../components/proof/JourneyTimeline.astro';
 import { useTranslations } from '../../i18n/utils';
 
 const lang = 'en';
 const t = useTranslations(lang);
-const journey = await getCollection('journey');
-
-const { shown, suppressed } = surfaceJourney(journey);
-for (const s of suppressed) {
-  console.warn(`[proof] journey "${s.id}" held back — claim without a real proof URL.`);
-}
-
-// Dated stations first (oldest → newest), then undated in file order.
-const dated = shown
-  .filter((s) => s.data.date)
-  .sort((a, b) => a.data.date!.getTime() - b.data.date!.getTime());
-const undated = shown.filter((s) => !s.data.date);
-const timeline = [...dated, ...undated];
-
-const dateFmt = new Intl.DateTimeFormat('en-US', { year: 'numeric', month: 'long' });
 ---
 
 <Base lang={lang} title={`${t('journey.title')} — 0xMARO`} description={t('journey.desc')}>
@@ -41,35 +24,7 @@ const dateFmt = new Intl.DateTimeFormat('en-US', { year: 'numeric', month: 'long
       <p class="archive__desc">{t('journey.desc')}</p>
     </header>
 
-    {
-      timeline.length > 0 ? (
-        <ol class="journey">
-          {timeline.map((s) => (
-            <li class="journey__stop">
-              <div class="journey__mark" aria-hidden="true" />
-              <div class="journey__body">
-                {s.data.date && <p class="journey__date ltr">{dateFmt.format(s.data.date)}</p>}
-                <h2 class="journey__event">{s.data.event[lang]}</h2>
-                {s.data.claim && (
-                  <a class="journey__claim ltr" href={s.data.proof} rel="nofollow noreferrer">
-                    {s.data.claim}
-                    <span class="journey__verify">{t('proof.verify')}</span>
-                  </a>
-                )}
-                {!isTodo(s.data.learned[lang]) && (
-                  <p class="journey__learned">
-                    <span class="journey__learned-k">{t('journey.learned')}</span>
-                    {s.data.learned[lang]}
-                  </p>
-                )}
-              </div>
-            </li>
-          ))}
-        </ol>
-      ) : (
-        <p class="archive__empty">{t('journey.empty')}</p>
-      )
-    }
+    <JourneyTimeline lang={lang} />
   </div>
 </Base>
 
@@ -99,96 +54,5 @@ const dateFmt = new Intl.DateTimeFormat('en-US', { year: 'numeric', month: 'long
     font-size: var(--step-1);
     color: var(--text-lo);
     line-height: var(--lh-lead);
-  }
-
-  .archive__empty {
-    margin-block-start: var(--space-7);
-    color: var(--text-lo);
-    font-size: var(--step-1);
-  }
-
-  .journey {
-    margin: var(--space-7) 0 0;
-    padding: 0;
-    list-style: none;
-    border-inline-start: var(--hairline) solid var(--line);
-  }
-
-  .journey__stop {
-    position: relative;
-    padding-inline-start: var(--space-6);
-    padding-block-end: var(--space-7);
-  }
-
-  .journey__stop:last-child {
-    padding-block-end: var(--space-4);
-  }
-
-  .journey__mark {
-    position: absolute;
-    inset-inline-start: 0;
-    margin-inline-start: calc(-1 * var(--space-1));
-    top: var(--space-2);
-    width: var(--space-2);
-    height: var(--space-2);
-    border-radius: 50%;
-    background: var(--ink-900);
-    border: var(--hairline) solid var(--sulfur-400);
-  }
-
-  .journey__date {
-    margin: 0 0 var(--space-2);
-    font-family: var(--f-code);
-    font-size: var(--text-xs);
-    color: var(--blue-400);
-  }
-
-  .journey__event {
-    margin: 0;
-    font-size: var(--step-0);
-    font-weight: 600;
-    font-family: var(--f-display);
-    letter-spacing: var(--ls-display);
-    color: var(--text-hi);
-    line-height: var(--lh-body);
-  }
-
-  .journey__claim {
-    display: inline-flex;
-    align-items: baseline;
-    gap: var(--space-2);
-    margin-block-start: var(--space-3);
-    font-family: var(--f-code);
-    font-size: var(--step--1);
-    color: var(--sulfur-300);
-    text-decoration: none;
-    border-block-end: var(--hairline) solid var(--sulfur-400);
-  }
-
-  .journey__claim:hover {
-    color: var(--sulfur-400);
-  }
-
-  .journey__verify {
-    font-size: var(--text-2xs);
-    color: var(--blue-400);
-  }
-
-  .journey__learned {
-    margin: var(--space-3) 0 0;
-    max-width: var(--measure-lead);
-    color: var(--text-lo);
-    line-height: var(--lh-body);
-    font-size: var(--step--1);
-  }
-
-  .journey__learned-k {
-    display: block;
-    font-family: var(--f-cond);
-    font-size: var(--text-xs);
-    text-transform: uppercase;
-    letter-spacing: var(--ls-label);
-    color: var(--blue-400);
-    margin-block-end: var(--space-1);
   }
 </style>

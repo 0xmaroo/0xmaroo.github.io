@@ -1,4 +1,4 @@
-import type { CollectionEntry } from 'astro:content';
+import { getCollection, type CollectionEntry } from 'astro:content';
 import { FACET_MIN_ENTRIES, facetSlug } from './content';
 
 /**
@@ -101,13 +101,38 @@ export const labPlatforms = (shown: Lab[]): LabPlatform[] => {
   return platforms.sort((a, b) => a.platform.localeCompare(b.platform, 'en'));
 };
 
-/** Journey stations: only claim-bearing stations need a proof. */
-export const surfaceJourney = (entries: Journey[]): ProofFilterResult<Journey> =>
-  gateOnProof(
+/** A string still carrying a placeholder marker anywhere (`TODO(copy): …`). */
+const hasPlaceholder = (value: string): boolean => value.includes('TODO(');
+
+/**
+ * Journey stations: only claim-bearing stations need a proof — and a station
+ * whose event text is still a placeholder is held back too, so the timeline
+ * never shows `TODO(copy)` to a visitor.
+ */
+export const surfaceJourney = (entries: Journey[]): ProofFilterResult<Journey> => {
+  const { shown, suppressed } = gateOnProof(
     entries,
     (e) => e.data.claim,
     (e) => e.data.proof
   );
+  const written = shown.filter((e) => !hasPlaceholder(e.data.event.en + e.data.event.ar));
+  for (const e of shown) {
+    if (!written.includes(e)) suppressed.push({ id: e.id, claim: 'TODO(copy) event' });
+  }
+  return { shown: written, suppressed };
+};
+
+/** Surfaced journey stations in display order: dated (oldest first), then undated. */
+export async function journeyTimeline(): Promise<Journey[]> {
+  const { shown, suppressed } = surfaceJourney(await getCollection('journey'));
+  for (const s of suppressed) {
+    console.warn(`[proof] journey "${s.id}" held back — ${s.claim}.`);
+  }
+  const dated = shown
+    .filter((s) => s.data.date)
+    .sort((a, b) => a.data.date!.getTime() - b.data.date!.getTime());
+  return [...dated, ...shown.filter((s) => !s.data.date)];
+}
 
 /** Project metrics: every figure with a value needs its own real proof URL. */
 export const surfaceProjectMetrics = (

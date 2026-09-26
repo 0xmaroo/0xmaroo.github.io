@@ -6,11 +6,14 @@ import Rail from '../../components/Rail.astro';
 import DiffHero from '../../components/hero/DiffHero.astro';
 import StatStrip from '../../components/proof/StatStrip.astro';
 import WriteupCard from '../../components/cards/WriteupCard.astro';
+import ArsenalTable from '../../components/proof/ArsenalTable.astro';
+import JourneyTimeline from '../../components/proof/JourneyTimeline.astro';
 import { getCollection } from 'astro:content';
 import { caseNumbers, documentedTopics, featuredOnHome, slugOf } from '../../lib/content';
 import { useTranslations } from '../../i18n/utils';
 import { siteDescription } from '../../config/site';
 import { personSchema, websiteSchema } from '../../lib/schema';
+import { journeyTimeline } from '../../lib/proof';
 
 const lang = 'ar';
 const t = useTranslations(lang);
@@ -24,6 +27,8 @@ const topics = documentedTopics(
   arsenal.map((a) => a.data.domain[lang]),
   lang
 );
+// §03 only renders once a station has cleared the proof and copy gates.
+const stations = await journeyTimeline();
 ---
 
 <Base lang={lang} title="0xMARO — مخطط واختراق" description={siteDescription[lang]}>
@@ -45,11 +50,18 @@ const topics = documentedTopics(
     <DiffHero lang={lang} />
     <p class="hero__sub">{t('hero.sub')}</p>
     {
-      featured.length > 0 && (
+      (featured.length > 0 || stations.length > 0) && (
         <div class="hero__cta">
-          <a class="btn btn--primary" href="#cases">
-            {t('cta.casefiles')}
-          </a>
+          {featured.length > 0 && (
+            <a class="btn btn--primary" href="#cases">
+              {t('cta.casefiles')}
+            </a>
+          )}
+          {stations.length > 0 && (
+            <a class="btn" href="#journey">
+              {t('cta.journey')}
+            </a>
+          )}
         </div>
       )
     }
@@ -70,8 +82,42 @@ const topics = documentedTopics(
 
           <div class="cases reveal">
             {featured.map((e) => (
-              <WriteupCard entry={e} caseNo={numbers.get(slugOf(e)) ?? 0} />
+              <WriteupCard entry={e} caseNo={numbers.get(slugOf(e)) ?? 0} viewerLang={lang} />
             ))}
+          </div>
+        </div>
+      </section>
+    )
+  }
+
+  <section id="arsenal" aria-labelledby="arsenal-title">
+    <div class="wrap">
+      <div class="sec__head reveal">
+        <span class="sec__num ltr">{t('sec.arsenal.num')}</span>
+        <h2 id="arsenal-title" class="sec__title">
+          {t('arsenal.title')}
+        </h2>
+        <p class="sec__note">{t('sec.arsenal.note')}</p>
+      </div>
+      <div class="reveal">
+        <ArsenalTable lang={lang} />
+      </div>
+    </div>
+  </section>
+
+  {
+    stations.length > 0 && (
+      <section id="journey" aria-labelledby="journey-title">
+        <div class="wrap">
+          <div class="sec__head reveal">
+            <span class="sec__num ltr">{t('sec.journey.num')}</span>
+            <h2 id="journey-title" class="sec__title">
+              {t('journey.title')}
+            </h2>
+            <p class="sec__note">{t('sec.journey.note')}</p>
+          </div>
+          <div class="reveal">
+            <JourneyTimeline lang={lang} level={3} stations={stations} />
           </div>
         </div>
       </section>

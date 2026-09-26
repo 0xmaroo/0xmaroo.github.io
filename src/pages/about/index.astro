@@ -9,8 +9,9 @@ import { getCollection } from 'astro:content';
 import { documentedTopics } from '../../lib/content';
 import { personSchema } from '../../lib/schema';
 
-// Structure only — every prose string is the TODO(copy) placeholder until the
-// owner writes it (CLAUDE.md: never invent a fact, a rank, or a claim).
+// Prose lives in src/i18n/ui.ts, drawn only from facts the owner stated in
+// plan/01 §1.1 — no numbers here: ranks and scores belong to the proof-gated
+// surfaces (CLAUDE.md: never invent a fact, a rank, or a claim).
 const lang = 'en';
 const t = useTranslations(lang);
 // plan/07 §7.2 knowsAbout — derived from the site's own content, not asserted.
@@ -33,7 +34,6 @@ const socialLinks = [
     slot="head"
     lang={lang}
     path="/about"
-    robots="noindex"
     title={`${t('about.title')} — 0xMARO`}
     description={t('about.desc')}
   />

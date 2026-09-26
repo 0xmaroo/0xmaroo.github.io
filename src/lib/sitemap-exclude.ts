@@ -85,10 +85,8 @@ const staticExcluded = new Set([
   // flag and this entry come off together when the owner writes the copy.
   '/uses',
   '/ar/uses',
-  // Same rule for /about and /journey: noindex while their prose is still
-  // TODO(copy), so the site can launch before the copy is written.
-  '/about',
-  '/ar/about',
+  // Same rule for /journey: noindex while no station has cleared the proof
+  // and copy gates (src/lib/proof.ts) — an empty timeline is not a page.
   '/journey',
   '/ar/journey',
 ]);

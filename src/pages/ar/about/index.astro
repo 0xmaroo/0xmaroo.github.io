@@ -9,8 +9,8 @@ import { getCollection } from 'astro:content';
 import { documentedTopics } from '../../../lib/content';
 import { personSchema } from '../../../lib/schema';
 
-// بنية فقط — كل نص في الصفحة هو placeholder من نوع TODO(copy) لحد ما
-// المالك يكتبه (قاعدة CLAUDE.md: ممنوع اختراع حقيقة أو رتبة أو ادعاء).
+// النصوص في src/i18n/ui.ts، ومأخوذة بس من حقايق المالك في plan/01 §1.1 — من غير
+// أرقام: الرتب والنتايج مكانها الأسطح اللي عليها إثبات (قاعدة CLAUDE.md).
 const lang = 'ar';
 const t = useTranslations(lang);
 // plan/07 §7.2 knowsAbout — derived from the site's own content, not asserted.
@@ -33,7 +33,6 @@ const socialLinks = [
     slot="head"
     lang={lang}
     path="/about"
-    robots="noindex"
     title={`${t('about.title')} — 0xMARO`}
     description={t('about.desc')}
   />

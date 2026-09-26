@@ -46,6 +46,10 @@ const en = {
   'sec.cases.title': 'Selected case files',
   'sec.cases.note':
     'Own systems first. If I built it, I can show you the root cause and the patch.',
+  'sec.arsenal.num': '§02',
+  'sec.arsenal.note': 'Tools are only interesting next to what they were used on.',
+  'sec.journey.num': '§03',
+  'sec.journey.note': 'Each step lists what it actually changed in how I work.',
   'case.id': 'CASE',
   'case.fix': 'fix ✓',
   'case.min': '{0} min',
@@ -187,13 +191,17 @@ const en = {
   'arsenal.usedOn': 'used on',
   'about.title': 'About',
   'about.eyebrow': '§07',
-  'about.desc': 'TODO(copy)',
+  'about.desc':
+    'A full-stack developer moving into application security. I build production systems, then document how they break and how to fix them.',
   'about.build.title': 'What I build',
-  'about.build.body': 'TODO(copy)',
+  'about.build.body':
+    'Production systems with real users behind them: authentication, permissions, payments and hardware. GymOS, Riyadat and DPRIMS, a rail-defect detection system running on ESP32. Having built them is what lets every writeup here end with a fix instead of a guess.',
   'about.work.title': 'How I work',
-  'about.work.body': 'TODO(copy)',
+  'about.work.body':
+    'Every case file follows the same seven sections: the target, recon, the bug, exploitation, the dead ends, the fix, and what it teaches. The dead ends stay in. The fix is real code, in the language the bug was written in. Every number on this site links to a source; if it cannot, it is not shown.',
   'about.reach.title': 'How to reach me',
-  'about.reach.body': 'TODO(copy)',
+  'about.reach.body':
+    'GitHub and LinkedIn are linked below. To report a security issue in this site, use the contact in /.well-known/security.txt.',
   'uses.title': 'Uses',
   'uses.eyebrow': 'TODO(copy)',
   'uses.desc': 'TODO(copy)',
@@ -263,6 +271,10 @@ const ar: Record<UIKey, string> = {
   'sec.cases.num': '§01',
   'sec.cases.title': 'ملفات مختارة',
   'sec.cases.note': 'الأنظمة اللي بنيتها الأول. لو أنا بنيته، أقدر أوريك الجذر والإصلاح.',
+  'sec.arsenal.num': '§02',
+  'sec.arsenal.note': 'الأداة مالهاش قيمة من غير ما تقول استخدمتها في إيه.',
+  'sec.journey.num': '§03',
+  'sec.journey.note': 'كل محطة مكتوب تحتها غيّرت إيه فعلاً في شغلي.',
   'case.id': 'CASE',
   'case.fix': 'fix ✓',
   'case.min': '{0} دقيقة',
@@ -402,13 +414,17 @@ const ar: Record<UIKey, string> = {
   'arsenal.usedOn': 'استخدمتها في',
   'about.title': 'عني',
   'about.eyebrow': '§07',
-  'about.desc': 'TODO(copy)',
+  'about.desc':
+    'مطوّر full-stack بيتحوّل لأمن التطبيقات. ببني أنظمة production، وبعدين بوثّق إزاي بتتكسر وإزاي تتصلّح.',
   'about.build.title': 'ما أبنيه',
-  'about.build.body': 'TODO(copy)',
+  'about.build.body':
+    'أنظمة production وراها مستخدمين حقيقيين: مصادقة، وصلاحيات، ومدفوعات، وأجهزة. GymOS وRiyadat وDPRIMS، نظام لكشف عيوب القضبان شغّال على ESP32. إني بنيت الأنظمة دي بنفسي هو اللي بيخلّي كل تحليل هنا ينتهي بإصلاح حقيقي مش تخمين.',
   'about.work.title': 'كيف أعمل',
-  'about.work.body': 'TODO(copy)',
+  'about.work.body':
+    'كل ملف حالة ماشي على نفس الأقسام السبعة: الهدف، والاستطلاع، والثغرة، والاستغلال، والطرق المسدودة، والإصلاح، والدرس. الطرق المسدودة بتفضل مكتوبة. والإصلاح كود حقيقي بنفس اللغة اللي اتكتبت بيها الثغرة. وكل رقم على الموقع مربوط بمصدر، واللي ملوش مصدر ما بيظهرش.',
   'about.reach.title': 'كيف تصل إليّ',
-  'about.reach.body': 'TODO(copy)',
+  'about.reach.body':
+    'روابط GitHub وLinkedIn تحت. ولو لقيت ثغرة في الموقع نفسه، استخدم عنوان التواصل اللي في ‎/.well-known/security.txt.',
   'uses.title': 'استخداماتي',
   'uses.eyebrow': 'TODO(copy)',
   'uses.desc': 'TODO(copy)',

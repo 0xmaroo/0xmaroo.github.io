@@ -1,16 +1,11 @@
 ---
 import Base from '../../layouts/Base.astro';
 import Seo from '../../components/Seo.astro';
-import { getCollection } from 'astro:content';
-import { getRelativeLocaleUrl } from 'astro:i18n';
+import ArsenalTable from '../../components/proof/ArsenalTable.astro';
 import { useTranslations } from '../../i18n/utils';
-import { livePaths } from '../../lib/content';
 
 const lang = 'en';
 const t = useTranslations(lang);
-const arsenal = await getCollection('arsenal');
-// A usedOn target that is a draft (or untranslated) renders as the dash, not a dead link.
-const live = livePaths(await getCollection('writeups'), await getCollection('projects'), lang);
 ---
 
 <Base lang={lang} title={`${t('arsenal.title')} — 0xMARO`} description={t('arsenal.desc')}>
@@ -28,48 +23,7 @@ const live = livePaths(await getCollection('writeups'), await getCollection('pro
       <p class="archive__desc">{t('arsenal.desc')}</p>
     </header>
 
-    {
-      arsenal.length > 0 ? (
-        <table class="arsenal">
-          <thead>
-            <tr>
-              <th scope="col">{t('arsenal.domain')}</th>
-              <th scope="col">{t('arsenal.tools')}</th>
-              <th scope="col">{t('arsenal.usedOn')}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {arsenal.map((d) => (
-              <tr>
-                <th scope="row" class="arsenal__domain">
-                  {d.data.domain[lang]}
-                </th>
-                <td class="arsenal__tools ltr">
-                  {d.data.rows.map((r) => r.tools.join(', ')).join(' · ')}
-                </td>
-                <td>
-                  <ul class="arsenal__used">
-                    {d.data.rows.map((r) => (
-                      <li>
-                        {r.usedOn && live.has(r.usedOn) ? (
-                          <a href={getRelativeLocaleUrl(lang, r.usedOn)}>{r.usedOn}</a>
-                        ) : (
-                          <span class="arsenal__none" aria-hidden="true">
-                            —
-                          </span>
-                        )}
-                      </li>
-                    ))}
-                  </ul>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      ) : (
-        <p class="archive__empty">{t('arsenal.empty')}</p>
-      )
-    }
+    <ArsenalTable lang={lang} />
   </div>
 </Base>
 
@@ -99,89 +53,5 @@ const live = livePaths(await getCollection('writeups'), await getCollection('pro
     font-size: var(--step-1);
     color: var(--text-lo);
     line-height: var(--lh-lead);
-  }
-
-  .archive__empty {
-    margin-block-start: var(--space-7);
-    color: var(--text-lo);
-    font-size: var(--step-1);
-  }
-
-  .arsenal {
-    width: 100%;
-    margin-block-start: var(--space-6);
-    border-collapse: collapse;
-    border: var(--hairline) solid var(--line);
-    font-size: var(--step--1);
-  }
-
-  .arsenal th {
-    text-align: start;
-    font-family: var(--f-cond);
-    font-size: var(--text-xs);
-    text-transform: uppercase;
-    letter-spacing: var(--ls-label);
-    color: var(--blue-400);
-    font-weight: 400;
-    padding: var(--space-3) var(--space-4);
-    border-block-end: var(--hairline) solid var(--line);
-    background: var(--ink-800);
-  }
-
-  .arsenal td {
-    padding: var(--space-3) var(--space-4);
-    border-block-end: var(--hairline) solid var(--line);
-    color: var(--text);
-    vertical-align: top;
-  }
-
-  .arsenal tbody tr:last-child td,
-  .arsenal tbody tr:last-child th {
-    border-block-end: none;
-  }
-
-  .arsenal__domain {
-    font-weight: 600;
-    color: var(--text-hi);
-    padding: var(--space-3) var(--space-4);
-    border-block-end: var(--hairline) solid var(--line);
-    text-align: start;
-  }
-
-  .arsenal__tools {
-    font-family: var(--f-code);
-    font-size: var(--text-sm);
-    color: var(--text-lo);
-    overflow-wrap: anywhere;
-  }
-
-  .arsenal__used {
-    margin: 0;
-    padding: 0;
-    list-style: none;
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-1);
-  }
-
-  .arsenal__used a {
-    display: inline-flex;
-    align-items: center;
-    min-height: var(--touch-min);
-    color: var(--sulfur-300);
-    text-decoration: none;
-    border-block-end: var(--hairline) solid transparent;
-    font-family: var(--f-code);
-    font-size: var(--text-sm);
-    overflow-wrap: anywhere;
-  }
-
-  .arsenal__used a:hover {
-    color: var(--sulfur-400);
-    border-block-end-color: var(--sulfur-400);
-  }
-
-  .arsenal__none {
-    color: var(--text-dim);
   }
 </style>

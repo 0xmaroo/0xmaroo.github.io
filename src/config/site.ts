@@ -25,10 +25,13 @@ export const sections = {
   // F-06 routes are in place, so the section can be enabled — but it stays out
   // of the nav until the stream has content worth a nav slot.
   notes: { enabled: true, inNav: false },
-  projects: { enabled: true, inNav: true },
+  // Routes stay built; the nav slot waits until the section has published
+  // content — an empty page one click from every page reads as abandoned.
+  // Flip back to true with the first published project / proven station.
+  projects: { enabled: true, inNav: false },
   labs: { enabled: true, inNav: false },
   arsenal: { enabled: true, inNav: true },
-  journey: { enabled: true, inNav: true },
+  journey: { enabled: true, inNav: false },
   uses: { enabled: true, inNav: false },
   hire: { enabled: false, inNav: false },
   about: { enabled: true, inNav: true },
