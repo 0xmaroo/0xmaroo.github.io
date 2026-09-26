@@ -47,7 +47,10 @@
 
 مترتبة بالقيمة على التمن. كلها **صفر JS** إلا اللي مكتوب جنبه.
 
-### ⭐ F-12 · "Verify this fix" — ربط كل إصلاح بالـ commit بتاعه
+### ⭐ F-12 · "Verify this fix" — ربط كل إصلاح بالـ commit بتاعه · ✅ اتعمل 2026-09-26
+
+> **التنفيذ:** field اسمه `fixCommits` (list مش واحد — الإصلاح ممكن ينزل على كذا commit، زي أول
+> مقال: 3). بيظهر في جدول الحقايق فوق المقال كـ `6cbe0ea ↗`، والـ build بيحذّر لو `hasFix` من غيره.
 
 **الفكرة:** field جديد `fixCommit` في الـ schema (URL لـ commit على GitHub). لو موجود، قسم `06 — The fix`
 بيطلع تحته سطر: `patched in a1b2c3d ↗` بيودّي على الـ diff الحقيقي.
@@ -85,7 +88,10 @@
 tokens، وبينعكس صح في RTL. **ليه:** القارئ B (§1.3) بيفهم عمق التفكير من الـ chain أسرع من الفقرات.
 **التمن:** نص يوم. **صفر JS.**
 
-### F-17 · نسخة طباعة/PDF للمقال
+### F-17 · نسخة طباعة/PDF للمقال · ✅ اتعمل 2026-09-26
+
+> **التنفيذ:** `src/styles/print.css` + remap للـ tokens نفسها جوه `@media print` في `tokens.css`
+> — ولا لون اتكتب برّه ملف الـ tokens.
 
 **الفكرة:** `@media print` — خلفية بيضا، الكود بيتلف، اللينكات بتطلع بالـ URL، الـ rail والـ nav
 بيختفوا. **ليه:** الـ recruiters والـ hiring managers بيطبعوا ويبعتوا PDF في لجان التوظيف.
@@ -103,10 +109,12 @@ tokens، وبينعكس صح في RTL. **ليه:** القارئ B (§1.3) بيف
 
 ## 9.4 التحسينات الهندسية
 
-- [ ] **اختبارات unit لـ `src/lib/`** (Vitest، dev dependency بس — صفر أثر على الموقع):
+- [x] **اختبارات unit لـ `src/lib/`** — 22 test، بتشتغل في الـ CI **وقبل كل deploy**. اتأكدت إن test
+      الـ LangSwitch بيفشل على الكود القديم فعلاً. (Vitest، dev dependency بس — صفر أثر على الموقع):
       `forSurface`، `forSurfaceWithFallback`، `caseNumbers`، `surfaceJourney`، `localeHrefs`.
       باج الـ LangSwitch اللي اتصلح النهارده كان هيتمسك من أول test.
-- [ ] **فحص روابط داخلي في الـ build** (مش في الـ CI بس): أي `href="/..."` في `dist/` لازم يطابق
+- [x] **فحص روابط داخلي في الـ build** (`scripts/check-links.mjs`) — **مسك باج من أول تشغيل:** زرار `ع`
+      في المقال الإنجليزي كان بيودّي على 404؛ دلوقتي بيودّي على `/ar/writeups/` (`langFallback`). (مش في الـ CI بس): أي `href="/..."` في `dist/` لازم يطابق
       ملف. النهارده اتمسك بالإيد إن `/arsenal` كان بيلينك على drafts.
 - [ ] **لقطات 360px في الـ CI:** screenshot لـ 4 صفحات (EN/AR × هوم/مقال) كـ artifact في كل PR.
 - [x] **`lighthouserc.json`** بيقيس صفحة المقال تاني (`/writeups/search-index-leaked-hidden-pages/`).
