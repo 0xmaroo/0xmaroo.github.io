@@ -13,13 +13,17 @@ export function getLangFromUrl(url: URL): Language {
  * Locale-independent paths (plan/02 §2.2) make the same pathname valid in both.
  */
 export function localeHrefs(pathname: string): Record<Language, string> {
-  const argFor = (l: Language): string | undefined => {
-    const bare = pathname.replace(/\/$/, '').replace(new RegExp(`^/${l}(?=/|$)`), '');
-    return bare.length > 0 ? bare.slice(1) : undefined;
-  };
+  // Strip the prefix of the page we are ON (only non-default locales carry
+  // one). Stripping the target's prefix instead left `/ar/` in the English
+  // link, so every Arabic page's EN button pointed back at itself.
+  const prefixes = Object.keys(ui).filter((l) => l !== defaultLang);
+  const bare = pathname
+    .replace(/\/$/, '')
+    .replace(new RegExp(`^/(?:${prefixes.join('|')})(?=/|$)`), '');
+  const arg = bare.length > 0 ? bare.slice(1) : undefined;
   return {
-    en: getRelativeLocaleUrl('en', argFor('en')),
-    ar: getRelativeLocaleUrl('ar', argFor('ar')),
+    en: getRelativeLocaleUrl('en', arg),
+    ar: getRelativeLocaleUrl('ar', arg),
   };
 }
 
