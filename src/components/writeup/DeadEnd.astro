@@ -26,7 +26,8 @@ const t = useTranslations(lang);
 
   .deadend__label {
     margin-block-end: var(--space-2);
-    color: var(--text-dim);
+    /* --text-dim measured 3.62:1 on this panel — below the AA floor for small text. */
+    color: var(--text-lo);
   }
 
   .deadend__body {
